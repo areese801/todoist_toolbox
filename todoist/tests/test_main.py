@@ -73,3 +73,34 @@ class TestCLIEntryPoint:
             assert False, "Should have raised SystemExit"
         except SystemExit:
             pass  # Expected: argparse exits when required subcommand missing
+
+    def test_label_by_color_subcommand_dispatches(self):
+        """'label-by-color' subcommand should parse and default to dry-run."""
+        from todoist.__main__ import build_parser
+
+        parser = build_parser()
+        args = parser.parse_args(["label-by-color", "--color", "sky_blue", "--label", "work"])
+
+        assert args.execute is False
+        assert args.color == "sky_blue"
+        assert args.label == "work"
+        assert hasattr(args, "func")
+
+    def test_label_by_color_with_execute_flag(self):
+        """--execute flag should set args.execute=True."""
+        from todoist.__main__ import build_parser
+
+        parser = build_parser()
+        args = parser.parse_args(["label-by-color", "--color", "sky_blue", "--label", "work", "--execute"])
+
+        assert args.execute is True
+
+    def test_label_by_color_args_default_to_none(self):
+        """--color and --label should default to None when not provided."""
+        from todoist.__main__ import build_parser
+
+        parser = build_parser()
+        args = parser.parse_args(["label-by-color"])
+
+        assert args.color is None
+        assert args.label is None

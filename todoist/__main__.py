@@ -7,6 +7,7 @@ Usage:
 Recipes:
     complete-overdue-recurring         Close overdue recurring tasks (dry-run by default)
     reschedule-overdue-nonrecurring    Reschedule overdue non-recurring tasks to today (dry-run by default)
+    label-by-color                     Apply a label to all tasks under projects of a given color
 """
 import argparse
 import sys
@@ -15,6 +16,7 @@ from todoist_api_python.api import TodoistAPI
 from todoist.todoist_tasks import _get_api_token
 from todoist.recipes import complete_overdue_recurring
 from todoist.recipes import reschedule_overdue_nonrecurring
+from todoist.recipes import label_by_color
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -58,6 +60,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Actually reschedule tasks. Without this flag, only a dry-run is performed.",
     )
     ro_parser.set_defaults(func=reschedule_overdue_nonrecurring.run)
+
+    # label-by-color
+    lbc_parser = subparsers.add_parser(
+        "label-by-color",
+        help="Apply a label to all tasks under projects of a given color.",
+    )
+    lbc_parser.add_argument(
+        "--color",
+        default=None,
+        help="Project color to match (e.g., sky_blue). Falls back to TODOIST_LABEL_COLOR env var.",
+    )
+    lbc_parser.add_argument(
+        "--label",
+        default=None,
+        help="Label name to apply (e.g., work). Falls back to TODOIST_LABEL_NAME env var.",
+    )
+    lbc_parser.add_argument(
+        "--execute",
+        action="store_true",
+        default=False,
+        help="Actually apply labels. Without this flag, only a dry-run is performed.",
+    )
+    lbc_parser.set_defaults(func=label_by_color.run)
 
     return parser
 
