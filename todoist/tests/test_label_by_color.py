@@ -182,3 +182,59 @@ class TestLabelByColorDryRun:
         output = capsys.readouterr().out
         assert "Work task" in output
         assert "Personal task" not in output
+
+
+class TestLabelByColorExecute:
+    """Tests for execute mode of label-by-color."""
+
+    def test_execute_calls_update_task_with_labels(self, capsys):
+        """Execute should call api.update_task with existing + new label."""
+        from todoist.recipes.label_by_color import run
+
+        proj = _make_project(project_id="proj_1", color="sky_blue", name="Work")
+        t1 = make_task(task_id="1", content="Task A", project_id="proj_1", labels=["urgent"])
+        t2 = make_task(task_id="2", content="Task B", project_id="proj_1", labels=[])
+
+        mock_api = MagicMock()
+        args = MagicMock()
+        args.execute = True
+        args.color = "sky_blue"
+        args.label = "work"
+
+        with patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]), \
+             patch("todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]):
+            run(args, api=mock_api)
+
+        assert mock_api.update_task.call_count == 2
+        # Task A should keep "urgent" and gain "work"
+        mock_api.update_task.assert_any_call(task_id="1", labels=["urgent", "work"])
+        # Task B should gain "work"
+        mock_api.update_task.assert_any_call(task_id="2", labels=["work"])
+
+        output = capsys.readouterr().out
+        assert "Labeled 2 of 2" in output
+
+    def test_execute_continues_on_individual_failure(self, capsys):
+        """If one task fails, the rest should still be attempted."""
+        from todoist.recipes.label_by_color import run
+
+        proj = _make_project(project_id="proj_1", color="sky_blue", name="Work")
+        t1 = make_task(task_id="1", content="Fails", project_id="proj_1", labels=[])
+        t2 = make_task(task_id="2", content="Succeeds", project_id="proj_1", labels=[])
+
+        mock_api = MagicMock()
+        mock_api.update_task.side_effect = [Exception("API error"), None]
+        args = MagicMock()
+        args.execute = True
+        args.color = "sky_blue"
+        args.label = "work"
+
+        with patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]), \
+             patch("todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]):
+            run(args, api=mock_api)
+
+        output = capsys.readouterr().out
+        assert "FAILED:" in output and "Fails" in output
+        assert "Labeled:" in output and "Succeeds" in output
+        assert "Labeled 1 of 2" in output
+        assert "1 failure(s)" in output
