@@ -26,7 +26,7 @@ if [ ! -d "${SCRIPT_DIR}/todoist/venv" ]; then
     exit 1
 fi
 
-source "${SCRIPT_DIR}/todoist/venv/bin/activate"
+PYTHON="${SCRIPT_DIR}/todoist/venv/bin/python"
 
 cd "${SCRIPT_DIR}"
-python -m todoist reschedule-overdue-nonrecurring "$@"
+"${PYTHON}" -m todoist reschedule-overdue-nonrecurring "$@"
