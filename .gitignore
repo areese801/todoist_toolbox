@@ -33,8 +33,9 @@ venv/
 # Ignore .env, which may hold sensitive variables / secrets
 .env
 
-# Working notes (local only)
+# Working notes and design docs (local only)
 TODO.md
+docs/
 
 # Ignore jupyter artifacts
 .ipynb
