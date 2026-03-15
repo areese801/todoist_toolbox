@@ -33,6 +33,9 @@ venv/
 # Ignore .env, which may hold sensitive variables / secrets
 .env
 
+# Working notes (local only)
+TODO.md
+
 # Ignore jupyter artifacts
 .ipynb
 .ipynb_checkpoints/

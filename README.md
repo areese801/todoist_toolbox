@@ -23,6 +23,25 @@ Finds overdue non-recurring (one-off) tasks and reschedules them to today.
 ./reschedule_overdue_nonrecurring.sh --execute    # actually reschedule them
 ```
 
+### label-by-color
+
+Applies a label to all tasks under projects of a given color. Useful for tagging everything in a work project (e.g., all tasks under a `sky_blue` project get the `work` label).
+
+```bash
+./label_by_color.sh --color sky_blue --label work              # dry-run (default)
+./label_by_color.sh --color sky_blue --label work --execute    # actually apply labels
+```
+
+For cron use, set env vars instead of passing args each time:
+
+```bash
+# in .env
+TODOIST_LABEL_COLOR=sky_blue
+TODOIST_LABEL_NAME=work
+```
+
+Then just: `./label_by_color.sh --execute`
+
 ## Setup
 
 ```bash
@@ -39,6 +58,7 @@ Set `TODOIST_API_TOKEN` in a `.env` file or as an environment variable. The valu
 source todoist/venv/bin/activate
 python -m todoist complete-overdue-recurring
 python -m todoist reschedule-overdue-nonrecurring
+python -m todoist label-by-color --color sky_blue --label work
 ```
 
 ## Tests
