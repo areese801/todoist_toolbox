@@ -145,6 +145,35 @@ def get_active_tasks(api=None):
 
     return ret_val
 
+
+def get_projects(api=None):
+    """
+    Fetch all projects from Todoist.
+
+    Args:
+        api: An optional TodoistAPI instance. If not provided, one will be created
+             using the token from the environment.
+    Returns: A list of Todoist Project objects.
+    """
+    if api is None:
+        todoist_api_token = _get_api_token()
+        api = TodoistAPI(todoist_api_token)
+
+    try:
+        result = api.get_projects()
+        # If the SDK returns a paginator (like get_tasks), flatten it.
+        # If it returns a plain list, just return it.
+        if isinstance(result, list):
+            return result
+        projects = []
+        for page in result:
+            projects.extend(page)
+        return projects
+    except Exception as ex:
+        print(f"Got Exception while trying to collect projects from the Todoist API:\n{ex}.", file=sys.stderr)
+        raise ex
+
+
 def get_overdue_recurring_tasks(api=None) -> list:
     """
     Returns a pared down list (Overdue, Recurring) of tasks returned by get_active_tasks.

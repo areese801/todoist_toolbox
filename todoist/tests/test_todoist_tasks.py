@@ -365,3 +365,42 @@ class TestResolveRecurrenceIntervalWithRetry:
                 _probe_next_due_date_with_retry(mock_api, "every day")
 
         mock_sleep.assert_not_called()
+
+
+class TestGetProjects:
+    """Tests for get_projects()."""
+
+    def test_get_projects_returns_list(self):
+        """get_projects should return a flat list of projects."""
+        from todoist.todoist_tasks import get_projects
+
+        mock_api = MagicMock()
+        p1 = MagicMock()
+        p1.id = "proj_1"
+        p1.color = "sky_blue"
+        p2 = MagicMock()
+        p2.id = "proj_2"
+        p2.color = "red"
+
+        mock_api.get_projects.return_value = [p1, p2]
+
+        result = get_projects(api=mock_api)
+
+        assert len(result) == 2
+        assert result[0].id == "proj_1"
+        mock_api.get_projects.assert_called_once()
+
+    def test_get_projects_with_no_api_creates_one(self):
+        """When no api is passed, get_projects should create one from the token."""
+        from todoist.todoist_tasks import get_projects
+
+        with patch("todoist.todoist_tasks._get_api_token", return_value="fake-token"), \
+             patch("todoist.todoist_tasks.TodoistAPI") as MockAPI:
+            mock_instance = MagicMock()
+            mock_instance.get_projects.return_value = []
+            MockAPI.return_value = mock_instance
+
+            result = get_projects()
+
+            MockAPI.assert_called_once_with("fake-token")
+            assert result == []
