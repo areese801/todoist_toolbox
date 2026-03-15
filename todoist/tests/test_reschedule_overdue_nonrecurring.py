@@ -1,4 +1,5 @@
 """Tests for the reschedule-overdue-nonrecurring recipe."""
+
 from unittest.mock import patch, MagicMock
 from datetime import date, timedelta
 
@@ -13,17 +14,25 @@ class TestRescheduleOverdueDryRun:
         from todoist.recipes.reschedule_overdue_nonrecurring import run
 
         yesterday = date.today() - timedelta(days=1)
-        t1 = make_task(task_id="1", content="Buy groceries",
-                       due=make_due(due_date=yesterday, is_recurring=False))
-        t2 = make_task(task_id="2", content="File taxes",
-                       due=make_due(due_date=yesterday, is_recurring=False))
+        t1 = make_task(
+            task_id="1",
+            content="Buy groceries",
+            due=make_due(due_date=yesterday, is_recurring=False),
+        )
+        t2 = make_task(
+            task_id="2",
+            content="File taxes",
+            due=make_due(due_date=yesterday, is_recurring=False),
+        )
 
         mock_api = MagicMock()
         args = MagicMock()
         args.execute = False
 
-        with patch("todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
-                   return_value=[t1, t2]):
+        with patch(
+            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+            return_value=[t1, t2],
+        ):
             run(args, api=mock_api)
 
         output = capsys.readouterr().out
@@ -40,8 +49,10 @@ class TestRescheduleOverdueDryRun:
         args = MagicMock()
         args.execute = False
 
-        with patch("todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
-                   return_value=[]):
+        with patch(
+            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+            return_value=[],
+        ):
             run(args, api=mock_api)
 
         output = capsys.readouterr().out
@@ -56,17 +67,25 @@ class TestRescheduleOverdueExecute:
         from todoist.recipes.reschedule_overdue_nonrecurring import run
 
         yesterday = date.today() - timedelta(days=1)
-        t1 = make_task(task_id="1", content="Buy groceries",
-                       due=make_due(due_date=yesterday, is_recurring=False))
-        t2 = make_task(task_id="2", content="File taxes",
-                       due=make_due(due_date=yesterday, is_recurring=False))
+        t1 = make_task(
+            task_id="1",
+            content="Buy groceries",
+            due=make_due(due_date=yesterday, is_recurring=False),
+        )
+        t2 = make_task(
+            task_id="2",
+            content="File taxes",
+            due=make_due(due_date=yesterday, is_recurring=False),
+        )
 
         mock_api = MagicMock()
         args = MagicMock()
         args.execute = True
 
-        with patch("todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
-                   return_value=[t1, t2]):
+        with patch(
+            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+            return_value=[t1, t2],
+        ):
             run(args, api=mock_api)
 
         assert mock_api.update_task.call_count == 2
@@ -81,18 +100,26 @@ class TestRescheduleOverdueExecute:
         from todoist.recipes.reschedule_overdue_nonrecurring import run
 
         yesterday = date.today() - timedelta(days=1)
-        t1 = make_task(task_id="1", content="Fails",
-                       due=make_due(due_date=yesterday, is_recurring=False))
-        t2 = make_task(task_id="2", content="Succeeds",
-                       due=make_due(due_date=yesterday, is_recurring=False))
+        t1 = make_task(
+            task_id="1",
+            content="Fails",
+            due=make_due(due_date=yesterday, is_recurring=False),
+        )
+        t2 = make_task(
+            task_id="2",
+            content="Succeeds",
+            due=make_due(due_date=yesterday, is_recurring=False),
+        )
 
         mock_api = MagicMock()
         mock_api.update_task.side_effect = [Exception("API error"), None]
         args = MagicMock()
         args.execute = True
 
-        with patch("todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
-                   return_value=[t1, t2]):
+        with patch(
+            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+            return_value=[t1, t2],
+        ):
             run(args, api=mock_api)
 
         output = capsys.readouterr().out

@@ -9,6 +9,7 @@ Recipes:
     reschedule-overdue-nonrecurring    Reschedule overdue non-recurring tasks to today (dry-run by default)
     label-by-color                     Apply a label to all tasks under projects of a given color
 """
+
 import argparse
 import sys
 

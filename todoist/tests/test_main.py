@@ -1,4 +1,5 @@
 """Tests for the CLI entry point (__main__.py)."""
+
 import sys
 from unittest.mock import patch, MagicMock
 
@@ -79,7 +80,9 @@ class TestCLIEntryPoint:
         from todoist.__main__ import build_parser
 
         parser = build_parser()
-        args = parser.parse_args(["label-by-color", "--color", "sky_blue", "--label", "work"])
+        args = parser.parse_args(
+            ["label-by-color", "--color", "sky_blue", "--label", "work"]
+        )
 
         assert args.execute is False
         assert args.color == "sky_blue"
@@ -91,7 +94,9 @@ class TestCLIEntryPoint:
         from todoist.__main__ import build_parser
 
         parser = build_parser()
-        args = parser.parse_args(["label-by-color", "--color", "sky_blue", "--label", "work", "--execute"])
+        args = parser.parse_args(
+            ["label-by-color", "--color", "sky_blue", "--label", "work", "--execute"]
+        )
 
         assert args.execute is True
 

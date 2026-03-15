@@ -12,6 +12,7 @@ import sys
 import time
 from datetime import date, datetime
 
+
 def _get_api_token():
     """
     Returns the API token from the TODOIST_API_TOKEN environment variable.
@@ -22,7 +23,7 @@ def _get_api_token():
     """
 
     load_dotenv()
-    raw_value = os.getenv('TODOIST_API_TOKEN')
+    raw_value = os.getenv("TODOIST_API_TOKEN")
 
     if not raw_value:
         raise ValueError("Failed to resolve Todoist API token")
@@ -30,13 +31,12 @@ def _get_api_token():
     raw_value = raw_value.strip()
 
     if os.path.isfile(raw_value):
-        with open(raw_value, 'r') as f:
-            token = f.read().rstrip('\n')
+        with open(raw_value, "r") as f:
+            token = f.read().rstrip("\n")
     else:
         token = raw_value
 
     return token
-
 
 
 TODOIST_TASK_URL = "https://app.todoist.com/app/task/{task_id}"
@@ -67,7 +67,7 @@ def _make_due_datetime(task_object: Task, truncate: bool = True) -> datetime:
     :return: a datetime object
     """
 
-    due_part = getattr(task_object, 'due')  # Contains a Due object or None
+    due_part = getattr(task_object, "due")  # Contains a Due object or None
 
     # Short circuit if there is no due date
     if due_part is None:
@@ -94,6 +94,7 @@ def _make_due_datetime(task_object: Task, truncate: bool = True) -> datetime:
 
     return ret_val
 
+
 def _is_overdue(task_object: Task, truncate: bool = True) -> bool:
     """
     Returns a boolean object indicating of a Task object is Overdue or not
@@ -118,6 +119,7 @@ def _is_overdue(task_object: Task, truncate: bool = True) -> bool:
 
     return ret_val
 
+
 def get_active_tasks(api=None):
     """
     Gets a list of all open tasks in todoist.
@@ -140,7 +142,10 @@ def get_active_tasks(api=None):
             active_tasks.extend(page)
         ret_val = active_tasks
     except Exception as ex:
-        print(f"Got Exception while trying to collect tasks from the Todoist API:\n{ex}.", file=sys.stderr)
+        print(
+            f"Got Exception while trying to collect tasks from the Todoist API:\n{ex}.",
+            file=sys.stderr,
+        )
         raise ex
 
     return ret_val
@@ -170,7 +175,10 @@ def get_projects(api=None):
             projects.extend(page)
         return projects
     except Exception as ex:
-        print(f"Got Exception while trying to collect projects from the Todoist API:\n{ex}.", file=sys.stderr)
+        print(
+            f"Got Exception while trying to collect projects from the Todoist API:\n{ex}.",
+            file=sys.stderr,
+        )
         raise ex
 
 
@@ -280,7 +288,10 @@ def _probe_next_due_date_with_retry(
                 retry_after = int(exc.response.headers.get("Retry-After", 2))
                 logger.debug(
                     "429 on attempt %d/%d for '%s', sleeping %ds",
-                    attempt + 1, max_retries, due_string, retry_after,
+                    attempt + 1,
+                    max_retries,
+                    due_string,
+                    retry_after,
                 )
                 time.sleep(retry_after)
             else:
@@ -292,7 +303,6 @@ if __name__ == "__main__":
     overdue_tasks = get_overdue_recurring_tasks()
     if overdue_tasks:
         for t in overdue_tasks:
-            print(f"OVERDUE:  due_date = {t.due.date}" \
-                  f"\ttask = {t.content}")
+            print(f"OVERDUE:  due_date = {t.due.date}\ttask = {t.content}")
     else:
         print(f"Found no overdue tasks")

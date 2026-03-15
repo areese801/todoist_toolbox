@@ -4,6 +4,7 @@ Recipe: label-by-color
 Applies a label to all tasks under projects of a given color.
 Dry-run is the default.
 """
+
 import os
 import sys
 
@@ -25,11 +26,17 @@ def _resolve_config(args):
     label = args.label or os.environ.get("TODOIST_LABEL_NAME")
 
     if not color:
-        print("Error: --color is required (or set TODOIST_LABEL_COLOR env var).", file=sys.stderr)
+        print(
+            "Error: --color is required (or set TODOIST_LABEL_COLOR env var).",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     if not label:
-        print("Error: --label is required (or set TODOIST_LABEL_NAME env var).", file=sys.stderr)
+        print(
+            "Error: --label is required (or set TODOIST_LABEL_NAME env var).",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     return color, label
@@ -62,7 +69,9 @@ def run(args, api=None):
     tasks_to_label = [t for t in tasks_in_projects if label_name not in t.labels]
 
     if not tasks_to_label:
-        print(f"No tasks need labeling. All tasks in matching projects already have '{label_name}'.")
+        print(
+            f"No tasks need labeling. All tasks in matching projects already have '{label_name}'."
+        )
         return
 
     if args.execute:
@@ -75,7 +84,7 @@ def _dry_run(tasks, label_name, project_names):
     """
     Print what would be labeled without making changes.
     """
-    print(f"DRY RUN: {len(tasks)} task(s) would be labeled with \"{label_name}\":\n")
+    print(f'DRY RUN: {len(tasks)} task(s) would be labeled with "{label_name}":\n')
     for task in tasks:
         proj_name = project_names.get(task.project_id, "unknown")
         print(f"  - {_task_link(task)}  (project: {proj_name})")

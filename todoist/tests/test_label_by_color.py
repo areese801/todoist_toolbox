@@ -1,4 +1,5 @@
 """Tests for the label-by-color recipe."""
+
 import os
 from unittest.mock import patch, MagicMock
 
@@ -25,7 +26,10 @@ class TestLabelByColorConfigResolution:
         args.color = "red"
         args.label = "personal"
 
-        with patch.dict(os.environ, {"TODOIST_LABEL_COLOR": "sky_blue", "TODOIST_LABEL_NAME": "work"}):
+        with patch.dict(
+            os.environ,
+            {"TODOIST_LABEL_COLOR": "sky_blue", "TODOIST_LABEL_NAME": "work"},
+        ):
             color, label = _resolve_config(args)
 
         assert color == "red"
@@ -39,7 +43,10 @@ class TestLabelByColorConfigResolution:
         args.color = None
         args.label = None
 
-        with patch.dict(os.environ, {"TODOIST_LABEL_COLOR": "sky_blue", "TODOIST_LABEL_NAME": "work"}):
+        with patch.dict(
+            os.environ,
+            {"TODOIST_LABEL_COLOR": "sky_blue", "TODOIST_LABEL_NAME": "work"},
+        ):
             color, label = _resolve_config(args)
 
         assert color == "sky_blue"
@@ -54,8 +61,7 @@ class TestLabelByColorConfigResolution:
         args.color = None
         args.label = "work"
 
-        with patch.dict(os.environ, {}, clear=True), \
-             pytest.raises(SystemExit):
+        with patch.dict(os.environ, {}, clear=True), pytest.raises(SystemExit):
             _resolve_config(args)
 
     def test_error_when_label_missing(self):
@@ -67,8 +73,7 @@ class TestLabelByColorConfigResolution:
         args.color = "sky_blue"
         args.label = None
 
-        with patch.dict(os.environ, {}, clear=True), \
-             pytest.raises(SystemExit):
+        with patch.dict(os.environ, {}, clear=True), pytest.raises(SystemExit):
             _resolve_config(args)
 
 
@@ -81,7 +86,9 @@ class TestLabelByColorDryRun:
 
         proj = _make_project(project_id="proj_1", color="sky_blue", name="Work")
         t1 = make_task(task_id="1", content="Review PR", project_id="proj_1", labels=[])
-        t2 = make_task(task_id="2", content="Deploy app", project_id="proj_1", labels=["urgent"])
+        t2 = make_task(
+            task_id="2", content="Deploy app", project_id="proj_1", labels=["urgent"]
+        )
 
         mock_api = MagicMock()
         args = MagicMock()
@@ -89,8 +96,12 @@ class TestLabelByColorDryRun:
         args.color = "sky_blue"
         args.label = "work"
 
-        with patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]), \
-             patch("todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]):
+        with (
+            patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]),
+            patch(
+                "todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]
+            ),
+        ):
             run(args, api=mock_api)
 
         output = capsys.readouterr().out
@@ -104,8 +115,12 @@ class TestLabelByColorDryRun:
         from todoist.recipes.label_by_color import run
 
         proj = _make_project(project_id="proj_1", color="sky_blue", name="Work")
-        t1 = make_task(task_id="1", content="Already labeled", project_id="proj_1", labels=["work"])
-        t2 = make_task(task_id="2", content="Needs label", project_id="proj_1", labels=[])
+        t1 = make_task(
+            task_id="1", content="Already labeled", project_id="proj_1", labels=["work"]
+        )
+        t2 = make_task(
+            task_id="2", content="Needs label", project_id="proj_1", labels=[]
+        )
 
         mock_api = MagicMock()
         args = MagicMock()
@@ -113,8 +128,12 @@ class TestLabelByColorDryRun:
         args.color = "sky_blue"
         args.label = "work"
 
-        with patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]), \
-             patch("todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]):
+        with (
+            patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]),
+            patch(
+                "todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]
+            ),
+        ):
             run(args, api=mock_api)
 
         output = capsys.readouterr().out
@@ -133,8 +152,10 @@ class TestLabelByColorDryRun:
         args.color = "sky_blue"
         args.label = "work"
 
-        with patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]), \
-             patch("todoist.recipes.label_by_color.get_active_tasks", return_value=[]):
+        with (
+            patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]),
+            patch("todoist.recipes.label_by_color.get_active_tasks", return_value=[]),
+        ):
             run(args, api=mock_api)
 
         output = capsys.readouterr().out
@@ -145,7 +166,9 @@ class TestLabelByColorDryRun:
         from todoist.recipes.label_by_color import run
 
         proj = _make_project(project_id="proj_1", color="sky_blue", name="Work")
-        t1 = make_task(task_id="1", content="Done", project_id="proj_1", labels=["work"])
+        t1 = make_task(
+            task_id="1", content="Done", project_id="proj_1", labels=["work"]
+        )
 
         mock_api = MagicMock()
         args = MagicMock()
@@ -153,12 +176,16 @@ class TestLabelByColorDryRun:
         args.color = "sky_blue"
         args.label = "work"
 
-        with patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]), \
-             patch("todoist.recipes.label_by_color.get_active_tasks", return_value=[t1]):
+        with (
+            patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]),
+            patch("todoist.recipes.label_by_color.get_active_tasks", return_value=[t1]),
+        ):
             run(args, api=mock_api)
 
         output = capsys.readouterr().out
-        assert "All tasks already labeled" in output or "No tasks need labeling" in output
+        assert (
+            "All tasks already labeled" in output or "No tasks need labeling" in output
+        )
 
     def test_tasks_in_non_matching_projects_excluded(self, capsys):
         """Tasks in projects with a different color should not be included."""
@@ -167,7 +194,9 @@ class TestLabelByColorDryRun:
         proj_match = _make_project(project_id="proj_1", color="sky_blue", name="Work")
         proj_other = _make_project(project_id="proj_2", color="red", name="Personal")
         t1 = make_task(task_id="1", content="Work task", project_id="proj_1", labels=[])
-        t2 = make_task(task_id="2", content="Personal task", project_id="proj_2", labels=[])
+        t2 = make_task(
+            task_id="2", content="Personal task", project_id="proj_2", labels=[]
+        )
 
         mock_api = MagicMock()
         args = MagicMock()
@@ -175,8 +204,15 @@ class TestLabelByColorDryRun:
         args.color = "sky_blue"
         args.label = "work"
 
-        with patch("todoist.recipes.label_by_color.get_projects", return_value=[proj_match, proj_other]), \
-             patch("todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]):
+        with (
+            patch(
+                "todoist.recipes.label_by_color.get_projects",
+                return_value=[proj_match, proj_other],
+            ),
+            patch(
+                "todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]
+            ),
+        ):
             run(args, api=mock_api)
 
         output = capsys.readouterr().out
@@ -192,7 +228,9 @@ class TestLabelByColorExecute:
         from todoist.recipes.label_by_color import run
 
         proj = _make_project(project_id="proj_1", color="sky_blue", name="Work")
-        t1 = make_task(task_id="1", content="Task A", project_id="proj_1", labels=["urgent"])
+        t1 = make_task(
+            task_id="1", content="Task A", project_id="proj_1", labels=["urgent"]
+        )
         t2 = make_task(task_id="2", content="Task B", project_id="proj_1", labels=[])
 
         mock_api = MagicMock()
@@ -201,8 +239,12 @@ class TestLabelByColorExecute:
         args.color = "sky_blue"
         args.label = "work"
 
-        with patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]), \
-             patch("todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]):
+        with (
+            patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]),
+            patch(
+                "todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]
+            ),
+        ):
             run(args, api=mock_api)
 
         assert mock_api.update_task.call_count == 2
@@ -229,8 +271,12 @@ class TestLabelByColorExecute:
         args.color = "sky_blue"
         args.label = "work"
 
-        with patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]), \
-             patch("todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]):
+        with (
+            patch("todoist.recipes.label_by_color.get_projects", return_value=[proj]),
+            patch(
+                "todoist.recipes.label_by_color.get_active_tasks", return_value=[t1, t2]
+            ),
+        ):
             run(args, api=mock_api)
 
         output = capsys.readouterr().out

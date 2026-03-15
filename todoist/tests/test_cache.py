@@ -1,4 +1,5 @@
 """Tests for todoist.cache module."""
+
 import json
 import pytest
 from datetime import date, timedelta
@@ -51,7 +52,11 @@ class TestRoundTrip:
         tomorrow = (date.today() + timedelta(days=1)).isoformat()
         next_week = (date.today() + timedelta(days=7)).isoformat()
         next_month = (date.today() + timedelta(days=30)).isoformat()
-        data = {"every day": tomorrow, "every week": next_week, "every month": next_month}
+        data = {
+            "every day": tomorrow,
+            "every week": next_week,
+            "every month": next_month,
+        }
         save_cache(data)
         assert load_cache() == data
 
@@ -75,7 +80,10 @@ class TestGetCachedDueDate:
     def test_returns_cached_value_for_future_date(self):
         """When the cached date is in the future, return it."""
         tomorrow = (date.today() + timedelta(days=1)).isoformat()
-        cache = {"every day": tomorrow, "every week": (date.today() + timedelta(days=7)).isoformat()}
+        cache = {
+            "every day": tomorrow,
+            "every week": (date.today() + timedelta(days=7)).isoformat(),
+        }
         assert get_cached_due_date(cache, "every day") == tomorrow
 
     def test_returns_cached_none(self):

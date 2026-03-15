@@ -4,6 +4,7 @@ Recipe: reschedule-overdue-nonrecurring
 Identifies overdue non-recurring Todoist tasks and reschedules them to today.
 Dry-run is the default.
 """
+
 from todoist.todoist_tasks import get_overdue_non_recurring_tasks, _task_link
 
 

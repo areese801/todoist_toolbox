@@ -1,4 +1,5 @@
 """Tests for todoist.todoist_tasks library functions."""
+
 import os
 import tempfile
 import pytest
@@ -15,8 +16,10 @@ class TestGetApiToken:
         """When env var is a plain string (not a file path), return it directly."""
         from todoist.todoist_tasks import _get_api_token
 
-        with patch("todoist.todoist_tasks.load_dotenv"), \
-             patch.dict(os.environ, {"TODOIST_API_TOKEN": "abc123token"}):
+        with (
+            patch("todoist.todoist_tasks.load_dotenv"),
+            patch.dict(os.environ, {"TODOIST_API_TOKEN": "abc123token"}),
+        ):
             result = _get_api_token()
 
         assert result == "abc123token"
@@ -31,8 +34,10 @@ class TestGetApiToken:
             token_path = f.name
 
         try:
-            with patch("todoist.todoist_tasks.load_dotenv"), \
-                 patch.dict(os.environ, {"TODOIST_API_TOKEN": token_path}):
+            with (
+                patch("todoist.todoist_tasks.load_dotenv"),
+                patch.dict(os.environ, {"TODOIST_API_TOKEN": token_path}),
+            ):
                 result = _get_api_token()
 
             assert result == "secret-token-from-file"
@@ -49,8 +54,10 @@ class TestGetApiToken:
             token_path = f.name
 
         try:
-            with patch("todoist.todoist_tasks.load_dotenv"), \
-                 patch.dict(os.environ, {"TODOIST_API_TOKEN": token_path}):
+            with (
+                patch("todoist.todoist_tasks.load_dotenv"),
+                patch.dict(os.environ, {"TODOIST_API_TOKEN": token_path}),
+            ):
                 result = _get_api_token()
 
             assert result == "my-token"
@@ -61,8 +68,10 @@ class TestGetApiToken:
         """When env var is empty or unset, raise ValueError."""
         from todoist.todoist_tasks import _get_api_token
 
-        with patch("todoist.todoist_tasks.load_dotenv"), \
-             patch.dict(os.environ, {"TODOIST_API_TOKEN": ""}, clear=False):
+        with (
+            patch("todoist.todoist_tasks.load_dotenv"),
+            patch.dict(os.environ, {"TODOIST_API_TOKEN": ""}, clear=False),
+        ):
             with pytest.raises(ValueError, match="Failed to resolve Todoist API token"):
                 _get_api_token()
 
@@ -73,8 +82,10 @@ class TestGetApiToken:
         env_copy = os.environ.copy()
         env_copy.pop("TODOIST_API_TOKEN", None)
 
-        with patch("todoist.todoist_tasks.load_dotenv"), \
-             patch.dict(os.environ, env_copy, clear=True):
+        with (
+            patch("todoist.todoist_tasks.load_dotenv"),
+            patch.dict(os.environ, env_copy, clear=True),
+        ):
             with pytest.raises(ValueError, match="Failed to resolve Todoist API token"):
                 _get_api_token()
 
@@ -106,8 +117,10 @@ class TestGetActiveTasks:
         mock_api_instance = MagicMock()
         mock_api_instance.get_tasks.return_value = iter([[mock_task]])
 
-        with patch("todoist.todoist_tasks._get_api_token", return_value="fake-token"), \
-             patch("todoist.todoist_tasks.TodoistAPI", return_value=mock_api_instance):
+        with (
+            patch("todoist.todoist_tasks._get_api_token", return_value="fake-token"),
+            patch("todoist.todoist_tasks.TodoistAPI", return_value=mock_api_instance),
+        ):
             result = get_active_tasks()
 
         assert len(result) == 1
@@ -124,12 +137,21 @@ class TestGetOverdueRecurringTasks:
         yesterday = date.today() - timedelta(days=1)
         tomorrow = date.today() + timedelta(days=1)
 
-        t1 = make_task(task_id="1", content="Overdue recurring",
-                       due=make_due(due_date=yesterday, is_recurring=True))
-        t2 = make_task(task_id="2", content="Overdue one-time",
-                       due=make_due(due_date=yesterday, is_recurring=False))
-        t3 = make_task(task_id="3", content="Future recurring",
-                       due=make_due(due_date=tomorrow, is_recurring=True))
+        t1 = make_task(
+            task_id="1",
+            content="Overdue recurring",
+            due=make_due(due_date=yesterday, is_recurring=True),
+        )
+        t2 = make_task(
+            task_id="2",
+            content="Overdue one-time",
+            due=make_due(due_date=yesterday, is_recurring=False),
+        )
+        t3 = make_task(
+            task_id="3",
+            content="Future recurring",
+            due=make_due(due_date=tomorrow, is_recurring=True),
+        )
         t4 = make_task(task_id="4", content="No due", _no_due=True)
 
         mock_api = MagicMock()
@@ -151,12 +173,21 @@ class TestGetOverdueNonRecurringTasks:
         yesterday = date.today() - timedelta(days=1)
         tomorrow = date.today() + timedelta(days=1)
 
-        t1 = make_task(task_id="1", content="Overdue recurring",
-                       due=make_due(due_date=yesterday, is_recurring=True))
-        t2 = make_task(task_id="2", content="Overdue non-recurring",
-                       due=make_due(due_date=yesterday, is_recurring=False))
-        t3 = make_task(task_id="3", content="Future non-recurring",
-                       due=make_due(due_date=tomorrow, is_recurring=False))
+        t1 = make_task(
+            task_id="1",
+            content="Overdue recurring",
+            due=make_due(due_date=yesterday, is_recurring=True),
+        )
+        t2 = make_task(
+            task_id="2",
+            content="Overdue non-recurring",
+            due=make_due(due_date=yesterday, is_recurring=False),
+        )
+        t3 = make_task(
+            task_id="3",
+            content="Future non-recurring",
+            due=make_due(due_date=tomorrow, is_recurring=False),
+        )
         t4 = make_task(task_id="4", content="No due", _no_due=True)
 
         mock_api = MagicMock()
@@ -319,8 +350,10 @@ class TestResolveRecurrenceIntervalWithRetry:
         mock_api = MagicMock()
         expected_date = date.today() + timedelta(days=3)
 
-        with patch("todoist.todoist_tasks._probe_next_due_date") as mock_resolve, \
-             patch("todoist.todoist_tasks.time.sleep") as mock_sleep:
+        with (
+            patch("todoist.todoist_tasks._probe_next_due_date") as mock_resolve,
+            patch("todoist.todoist_tasks.time.sleep") as mock_sleep,
+        ):
             mock_resolve.side_effect = [self._make_429_error(), expected_date]
 
             result = _probe_next_due_date_with_retry(mock_api, "every 3 days")
@@ -335,8 +368,10 @@ class TestResolveRecurrenceIntervalWithRetry:
 
         mock_api = MagicMock()
 
-        with patch("todoist.todoist_tasks._probe_next_due_date") as mock_resolve, \
-             patch("todoist.todoist_tasks.time.sleep"):
+        with (
+            patch("todoist.todoist_tasks._probe_next_due_date") as mock_resolve,
+            patch("todoist.todoist_tasks.time.sleep"),
+        ):
             mock_resolve.side_effect = [
                 self._make_429_error(),
                 self._make_429_error(),
@@ -357,8 +392,10 @@ class TestResolveRecurrenceIntervalWithRetry:
 
         mock_api = MagicMock()
 
-        with patch("todoist.todoist_tasks._probe_next_due_date") as mock_resolve, \
-             patch("todoist.todoist_tasks.time.sleep") as mock_sleep:
+        with (
+            patch("todoist.todoist_tasks._probe_next_due_date") as mock_resolve,
+            patch("todoist.todoist_tasks.time.sleep") as mock_sleep,
+        ):
             mock_resolve.side_effect = self._make_500_error()
 
             with pytest.raises(HTTPError):
@@ -394,8 +431,10 @@ class TestGetProjects:
         """When no api is passed, get_projects should create one from the token."""
         from todoist.todoist_tasks import get_projects
 
-        with patch("todoist.todoist_tasks._get_api_token", return_value="fake-token"), \
-             patch("todoist.todoist_tasks.TodoistAPI") as MockAPI:
+        with (
+            patch("todoist.todoist_tasks._get_api_token", return_value="fake-token"),
+            patch("todoist.todoist_tasks.TodoistAPI") as MockAPI,
+        ):
             mock_instance = MagicMock()
             mock_instance.get_projects.return_value = []
             MockAPI.return_value = mock_instance

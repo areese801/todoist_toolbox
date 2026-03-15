@@ -7,6 +7,7 @@ or fewer) and closes them in bulk. Dry-run is the default.
 Closing a recurring task in Todoist advances it to the next occurrence —
 it does not delete it.
 """
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime
 
@@ -38,9 +39,7 @@ def _interval_from_due_date(due_date_iso: str | None) -> int | None:
     return (date.fromisoformat(due_date_iso) - date.today()).days
 
 
-def _probe_due_dates_parallel(
-    api, due_strings: list[str]
-) -> dict[str, str | None]:
+def _probe_due_dates_parallel(api, due_strings: list[str]) -> dict[str, str | None]:
     """
     Probe next due dates for a list of due strings in parallel.
 
@@ -56,9 +55,7 @@ def _probe_due_dates_parallel(
 
     with ThreadPoolExecutor(max_workers=3) as executor:
         future_to_ds = {
-            executor.submit(
-                _probe_next_due_date_with_retry, api, ds
-            ): ds
+            executor.submit(_probe_next_due_date_with_retry, api, ds): ds
             for ds in due_strings
         }
         for i, future in enumerate(as_completed(future_to_ds), start=1):
@@ -70,7 +67,7 @@ def _probe_due_dates_parallel(
             iso = next_due.isoformat() if next_due is not None else None
             results[ds] = iso
             interval = _interval_from_due_date(iso)
-            print(f"[{_ts()}] [{i}/{total}] \"{ds}\" -> {interval}d")
+            print(f'[{_ts()}] [{i}/{total}] "{ds}" -> {interval}d')
 
     return results
 
@@ -153,7 +150,7 @@ def _dry_run(qualifying):
         print(
             f"  - {_task_link(task)}"
             f"  (due: {task.due.date}, recurs every {interval}d,"
-            f" string: \"{task.due.string}\")"
+            f' string: "{task.due.string}")'
         )
     print(f"\nTo execute, re-run with --execute")
 

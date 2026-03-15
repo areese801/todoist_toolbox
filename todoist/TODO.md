@@ -91,6 +91,27 @@ d001855 latest
 4. **Clean up worktree** — delete `claude/cranky-goodall` branch and `.claude/worktrees/` directory
 5. **Cron setup** — schedule `python -m todoist complete-overdue --execute` on a cron
 
+## Future Ideas
+
+### Snooze Functionality
+
+**Idea**: Snoozing an otherwise "due" task makes it disappear from both the
+toolbox recipes and the core Todoist UI itself.
+
+**Possible pattern**: Remove the task's due date, then restore it at a later
+time. This would make the task invisible to any filter that looks at due dates
+(including our overdue recipes and Todoist's own "Today" / "Overdue" views).
+
+**Open questions** (to think through later):
+- Where to store the original due date + snooze-until time? (local cache file?
+  task description? task comments? a dedicated label?)
+- How to trigger the restore — cron job that checks snooze expiry?
+- CLI interface: `python -m todoist snooze --task-id 12345 --until 2026-03-20`?
+- What about recurring tasks — removing due date may break recurrence
+- Should snooze duration be relative ("3 days") or absolute ("2026-03-20")?
+
+**Status**: Idea only — needs design session before implementation.
+
 ## Design Doc
 
 Full design rationale is in `docs/plans/2026-02-24-complete-overdue-recurring-design.md`.

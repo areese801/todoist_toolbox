@@ -7,6 +7,7 @@ Values are ISO date strings (e.g. "2026-03-20") representing the next due date
 for a given recurrence pattern, or null if the probe failed. Entries whose date
 is in the past are treated as stale and returned as MISS.
 """
+
 import json
 from datetime import date
 from pathlib import Path
@@ -37,9 +38,7 @@ def save_cache(cache: dict[str, str | None]) -> None:
     CACHE_FILE.write_text(json.dumps(cache, indent=2) + "\n")
 
 
-def get_cached_due_date(
-    cache: dict[str, str | None], due_string: str
-) -> str | None:
+def get_cached_due_date(cache: dict[str, str | None], due_string: str) -> str | None:
     """
     Look up a due_string in the cache.
 

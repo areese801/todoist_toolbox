@@ -1,4 +1,5 @@
 """Tests for the complete-overdue-recurring recipe."""
+
 import argparse
 from unittest.mock import MagicMock, patch, call
 from datetime import date, timedelta
@@ -33,20 +34,29 @@ class TestCompleteOverdueDryRun:
 
         yesterday = date.today() - timedelta(days=1)
 
-        t1 = make_task(task_id="1", content="Daily standup",
-                       due=make_due(due_date=yesterday, due_string="every day",
-                                    is_recurring=True))
-        t2 = make_task(task_id="2", content="Monthly review",
-                       due=make_due(due_date=yesterday, due_string="every month",
-                                    is_recurring=True))
+        t1 = make_task(
+            task_id="1",
+            content="Daily standup",
+            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
+        )
+        t2 = make_task(
+            task_id="2",
+            content="Monthly review",
+            due=make_due(
+                due_date=yesterday, due_string="every month", is_recurring=True
+            ),
+        )
 
         mock_api = MagicMock()
         cache_data = {"every day": _future(1), "every month": _future(30)}
 
-        with patch("todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-                    return_value=[t1, t2]), \
-             _patch_cache_with(cache_data):
-
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[t1, t2],
+            ),
+            _patch_cache_with(cache_data),
+        ):
             args = argparse.Namespace(execute=False, clear_cache=False)
             run(args, api=mock_api)
 
@@ -61,9 +71,13 @@ class TestCompleteOverdueDryRun:
 
         mock_api = MagicMock()
 
-        with patch("todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-                    return_value=[]), \
-             _patch_cache_with({}):
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[],
+            ),
+            _patch_cache_with({}),
+        ):
             args = argparse.Namespace(execute=False, clear_cache=False)
             run(args, api=mock_api)
 
@@ -75,17 +89,24 @@ class TestCompleteOverdueDryRun:
         from todoist.recipes.complete_overdue_recurring import run
 
         yesterday = date.today() - timedelta(days=1)
-        t1 = make_task(task_id="1", content="Monthly review",
-                       due=make_due(due_date=yesterday, due_string="every month",
-                                    is_recurring=True))
+        t1 = make_task(
+            task_id="1",
+            content="Monthly review",
+            due=make_due(
+                due_date=yesterday, due_string="every month", is_recurring=True
+            ),
+        )
 
         mock_api = MagicMock()
         cache_data = {"every month": _future(30)}
 
-        with patch("todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-                    return_value=[t1]), \
-             _patch_cache_with(cache_data):
-
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[t1],
+            ),
+            _patch_cache_with(cache_data),
+        ):
             args = argparse.Namespace(execute=False, clear_cache=False)
             run(args, api=mock_api)
 
@@ -102,21 +123,30 @@ class TestCompleteOverdueExecute:
 
         yesterday = date.today() - timedelta(days=1)
 
-        t1 = make_task(task_id="1", content="Daily standup",
-                       due=make_due(due_date=yesterday, due_string="every day",
-                                    is_recurring=True))
-        t2 = make_task(task_id="2", content="Check mailbox",
-                       due=make_due(due_date=yesterday, due_string="every 2 days",
-                                    is_recurring=True))
+        t1 = make_task(
+            task_id="1",
+            content="Daily standup",
+            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
+        )
+        t2 = make_task(
+            task_id="2",
+            content="Check mailbox",
+            due=make_due(
+                due_date=yesterday, due_string="every 2 days", is_recurring=True
+            ),
+        )
 
         mock_api = MagicMock()
         mock_api.complete_task.return_value = True
         cache_data = {"every day": _future(1), "every 2 days": _future(2)}
 
-        with patch("todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-                    return_value=[t1, t2]), \
-             _patch_cache_with(cache_data):
-
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[t1, t2],
+            ),
+            _patch_cache_with(cache_data),
+        ):
             args = argparse.Namespace(execute=True, clear_cache=False)
             run(args, api=mock_api)
 
@@ -133,21 +163,28 @@ class TestCompleteOverdueExecute:
 
         yesterday = date.today() - timedelta(days=1)
 
-        t1 = make_task(task_id="1", content="Failing task",
-                       due=make_due(due_date=yesterday, due_string="every day",
-                                    is_recurring=True))
-        t2 = make_task(task_id="2", content="OK task",
-                       due=make_due(due_date=yesterday, due_string="every day",
-                                    is_recurring=True))
+        t1 = make_task(
+            task_id="1",
+            content="Failing task",
+            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
+        )
+        t2 = make_task(
+            task_id="2",
+            content="OK task",
+            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
+        )
 
         mock_api = MagicMock()
         mock_api.complete_task.side_effect = [Exception("API down"), True]
         cache_data = {"every day": _future(1)}
 
-        with patch("todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-                    return_value=[t1, t2]), \
-             _patch_cache_with(cache_data):
-
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[t1, t2],
+            ),
+            _patch_cache_with(cache_data),
+        ):
             args = argparse.Namespace(execute=True, clear_cache=False)
             run(args, api=mock_api)
 
@@ -166,22 +203,35 @@ class TestCacheIntegration:
 
         yesterday = date.today() - timedelta(days=1)
         tasks = [
-            make_task(task_id="1", content="Task 1",
-                      due=make_due(due_date=yesterday, due_string="every day",
-                                   is_recurring=True)),
-            make_task(task_id="2", content="Task 2",
-                      due=make_due(due_date=yesterday, due_string="every week",
-                                   is_recurring=True)),
+            make_task(
+                task_id="1",
+                content="Task 1",
+                due=make_due(
+                    due_date=yesterday, due_string="every day", is_recurring=True
+                ),
+            ),
+            make_task(
+                task_id="2",
+                content="Task 2",
+                due=make_due(
+                    due_date=yesterday, due_string="every week", is_recurring=True
+                ),
+            ),
         ]
 
         mock_api = MagicMock()
         cache_data = {"every day": _future(1), "every week": _future(7)}
 
-        with patch("todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-                    return_value=tasks), \
-             _patch_cache_with(cache_data), \
-             patch("todoist.recipes.complete_overdue_recurring._probe_next_due_date_with_retry") as mock_probe:
-
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=tasks,
+            ),
+            _patch_cache_with(cache_data),
+            patch(
+                "todoist.recipes.complete_overdue_recurring._probe_next_due_date_with_retry"
+            ) as mock_probe,
+        ):
             args = argparse.Namespace(execute=False, clear_cache=False)
             run(args, api=mock_api)
 
@@ -195,20 +245,29 @@ class TestCacheIntegration:
 
         yesterday = date.today() - timedelta(days=1)
         tomorrow = date.today() + timedelta(days=1)
-        t1 = make_task(task_id="1", content="Daily task",
-                       due=make_due(due_date=yesterday, due_string="every day",
-                                    is_recurring=True))
+        t1 = make_task(
+            task_id="1",
+            content="Daily task",
+            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
+        )
 
         mock_api = MagicMock()
         mock_save = MagicMock()
 
-        with patch("todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-                    return_value=[t1]), \
-             patch("todoist.recipes.complete_overdue_recurring.load_cache", return_value={}), \
-             patch("todoist.recipes.complete_overdue_recurring.save_cache", mock_save), \
-             patch("todoist.recipes.complete_overdue_recurring._probe_next_due_date_with_retry",
-                    return_value=tomorrow):
-
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[t1],
+            ),
+            patch(
+                "todoist.recipes.complete_overdue_recurring.load_cache", return_value={}
+            ),
+            patch("todoist.recipes.complete_overdue_recurring.save_cache", mock_save),
+            patch(
+                "todoist.recipes.complete_overdue_recurring._probe_next_due_date_with_retry",
+                return_value=tomorrow,
+            ),
+        ):
             args = argparse.Namespace(execute=False, clear_cache=False)
             run(args, api=mock_api)
 
@@ -223,11 +282,16 @@ class TestCacheIntegration:
         mock_api = MagicMock()
         mock_save = MagicMock()
 
-        with patch("todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-                    return_value=[]), \
-             patch("todoist.recipes.complete_overdue_recurring.load_cache", return_value={}), \
-             patch("todoist.recipes.complete_overdue_recurring.save_cache", mock_save):
-
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[],
+            ),
+            patch(
+                "todoist.recipes.complete_overdue_recurring.load_cache", return_value={}
+            ),
+            patch("todoist.recipes.complete_overdue_recurring.save_cache", mock_save),
+        ):
             args = argparse.Namespace(execute=False, clear_cache=True)
             run(args, api=mock_api)
 
@@ -243,21 +307,32 @@ class TestCacheIntegration:
         yesterday = date.today() - timedelta(days=1)
         tomorrow = date.today() + timedelta(days=1)
         tasks = [
-            make_task(task_id=str(i), content=f"Task {i}",
-                      due=make_due(due_date=yesterday, due_string="every day",
-                                   is_recurring=True))
+            make_task(
+                task_id=str(i),
+                content=f"Task {i}",
+                due=make_due(
+                    due_date=yesterday, due_string="every day", is_recurring=True
+                ),
+            )
             for i in range(3)
         ]
 
         mock_api = MagicMock()
 
-        with patch("todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-                    return_value=tasks), \
-             patch("todoist.recipes.complete_overdue_recurring.load_cache", return_value={}), \
-             patch("todoist.recipes.complete_overdue_recurring.save_cache"), \
-             patch("todoist.recipes.complete_overdue_recurring._probe_next_due_date_with_retry",
-                    return_value=tomorrow) as mock_probe:
-
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=tasks,
+            ),
+            patch(
+                "todoist.recipes.complete_overdue_recurring.load_cache", return_value={}
+            ),
+            patch("todoist.recipes.complete_overdue_recurring.save_cache"),
+            patch(
+                "todoist.recipes.complete_overdue_recurring._probe_next_due_date_with_retry",
+                return_value=tomorrow,
+            ) as mock_probe,
+        ):
             args = argparse.Namespace(execute=False, clear_cache=False)
             run(args, api=mock_api)
 
@@ -270,21 +345,31 @@ class TestCacheIntegration:
 
         yesterday = date.today() - timedelta(days=1)
         tomorrow = date.today() + timedelta(days=1)
-        t1 = make_task(task_id="1", content="Daily task",
-                       due=make_due(due_date=yesterday, due_string="every day",
-                                    is_recurring=True))
+        t1 = make_task(
+            task_id="1",
+            content="Daily task",
+            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
+        )
 
         mock_api = MagicMock()
         # Cache has a stale entry (date in the past)
         stale_cache = {"every day": yesterday.isoformat()}
 
-        with patch("todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-                    return_value=[t1]), \
-             patch("todoist.recipes.complete_overdue_recurring.load_cache", return_value=stale_cache), \
-             patch("todoist.recipes.complete_overdue_recurring.save_cache"), \
-             patch("todoist.recipes.complete_overdue_recurring._probe_next_due_date_with_retry",
-                    return_value=tomorrow) as mock_probe:
-
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[t1],
+            ),
+            patch(
+                "todoist.recipes.complete_overdue_recurring.load_cache",
+                return_value=stale_cache,
+            ),
+            patch("todoist.recipes.complete_overdue_recurring.save_cache"),
+            patch(
+                "todoist.recipes.complete_overdue_recurring._probe_next_due_date_with_retry",
+                return_value=tomorrow,
+            ) as mock_probe,
+        ):
             args = argparse.Namespace(execute=False, clear_cache=False)
             run(args, api=mock_api)
 
