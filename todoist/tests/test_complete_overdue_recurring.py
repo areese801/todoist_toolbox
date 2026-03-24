@@ -8,11 +8,6 @@ from todoist.cache import MISS
 from todoist.tests.helpers import make_task, make_due
 
 
-def _future(days):
-    """Return an ISO date string `days` in the future."""
-    return (date.today() + timedelta(days=days)).isoformat()
-
-
 def _patch_cache_with(data: dict):
     """
     Return a context manager that patches load_cache to return `data`
@@ -48,7 +43,7 @@ class TestCompleteOverdueDryRun:
         )
 
         mock_api = MagicMock()
-        cache_data = {"every day": _future(1), "every month": _future(30)}
+        cache_data = {"every day": 1, "every month": 30}
 
         with (
             patch(
@@ -98,7 +93,7 @@ class TestCompleteOverdueDryRun:
         )
 
         mock_api = MagicMock()
-        cache_data = {"every month": _future(30)}
+        cache_data = {"every month": 30}
 
         with (
             patch(
@@ -138,7 +133,7 @@ class TestCompleteOverdueExecute:
 
         mock_api = MagicMock()
         mock_api.complete_task.return_value = True
-        cache_data = {"every day": _future(1), "every 2 days": _future(2)}
+        cache_data = {"every day": 1, "every 2 days": 2}
 
         with (
             patch(
@@ -176,7 +171,7 @@ class TestCompleteOverdueExecute:
 
         mock_api = MagicMock()
         mock_api.complete_task.side_effect = [Exception("API down"), True]
-        cache_data = {"every day": _future(1)}
+        cache_data = {"every day": 1}
 
         with (
             patch(
@@ -220,7 +215,7 @@ class TestCacheIntegration:
         ]
 
         mock_api = MagicMock()
-        cache_data = {"every day": _future(1), "every week": _future(7)}
+        cache_data = {"every day": 1, "every week": 7}
 
         with (
             patch(
@@ -244,7 +239,6 @@ class TestCacheIntegration:
         from todoist.recipes.complete_overdue_recurring import run
 
         yesterday = date.today() - timedelta(days=1)
-        tomorrow = date.today() + timedelta(days=1)
         t1 = make_task(
             task_id="1",
             content="Daily task",
@@ -265,7 +259,7 @@ class TestCacheIntegration:
             patch("todoist.recipes.complete_overdue_recurring.save_cache", mock_save),
             patch(
                 "todoist.recipes.complete_overdue_recurring._probe_next_due_date_with_retry",
-                return_value=tomorrow,
+                return_value=1,
             ),
         ):
             args = argparse.Namespace(execute=False, clear_cache=False)
@@ -273,7 +267,7 @@ class TestCacheIntegration:
 
         mock_save.assert_called_once()
         saved_data = mock_save.call_args[0][0]
-        assert saved_data["every day"] == tomorrow.isoformat()
+        assert saved_data["every day"] == 1
 
     def test_clear_cache_flag(self, capsys):
         """--clear-cache should reset the cache before running."""
@@ -305,7 +299,6 @@ class TestCacheIntegration:
         from todoist.recipes.complete_overdue_recurring import run
 
         yesterday = date.today() - timedelta(days=1)
-        tomorrow = date.today() + timedelta(days=1)
         tasks = [
             make_task(
                 task_id=str(i),
@@ -330,48 +323,11 @@ class TestCacheIntegration:
             patch("todoist.recipes.complete_overdue_recurring.save_cache"),
             patch(
                 "todoist.recipes.complete_overdue_recurring._probe_next_due_date_with_retry",
-                return_value=tomorrow,
+                return_value=1,
             ) as mock_probe,
         ):
             args = argparse.Namespace(execute=False, clear_cache=False)
             run(args, api=mock_api)
 
         # Should only be called once despite 3 tasks with same due.string
-        mock_probe.assert_called_once_with(mock_api, "every day")
-
-    def test_stale_cache_entry_triggers_reprobe(self, capsys):
-        """A cached date in the past should be treated as a miss and re-probed."""
-        from todoist.recipes.complete_overdue_recurring import run
-
-        yesterday = date.today() - timedelta(days=1)
-        tomorrow = date.today() + timedelta(days=1)
-        t1 = make_task(
-            task_id="1",
-            content="Daily task",
-            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
-        )
-
-        mock_api = MagicMock()
-        # Cache has a stale entry (date in the past)
-        stale_cache = {"every day": yesterday.isoformat()}
-
-        with (
-            patch(
-                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-                return_value=[t1],
-            ),
-            patch(
-                "todoist.recipes.complete_overdue_recurring.load_cache",
-                return_value=stale_cache,
-            ),
-            patch("todoist.recipes.complete_overdue_recurring.save_cache"),
-            patch(
-                "todoist.recipes.complete_overdue_recurring._probe_next_due_date_with_retry",
-                return_value=tomorrow,
-            ) as mock_probe,
-        ):
-            args = argparse.Namespace(execute=False, clear_cache=False)
-            run(args, api=mock_api)
-
-        # Stale entry should trigger a re-probe
         mock_probe.assert_called_once_with(mock_api, "every day")

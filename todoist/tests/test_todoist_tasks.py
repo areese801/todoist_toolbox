@@ -202,21 +202,26 @@ class TestGetOverdueNonRecurringTasks:
 class TestProbeNextDueDate:
     """Tests for _probe_next_due_date()."""
 
-    def test_daily_task_returns_tomorrow(self):
-        """A task with 'every day' should return tomorrow's date."""
+    def test_daily_task_returns_1_day_interval(self):
+        """A task with 'every day' should return an interval of 1."""
         from todoist.todoist_tasks import _probe_next_due_date
 
         mock_api = MagicMock()
 
-        # add_task returns a temp task
-        temp_task = make_task(task_id="tmp-1", content="__probe__")
+        # add_task returns a temp task with initial due date of today
+        today = date.today()
+        temp_task = make_task(
+            task_id="tmp-1",
+            content="__probe__",
+            due=make_due(due_date=today),
+        )
         mock_api.add_task.return_value = temp_task
 
         # complete_task succeeds
         mock_api.complete_task.return_value = True
 
         # get_task returns the task with due date advanced by 1 day
-        tomorrow = date.today() + timedelta(days=1)
+        tomorrow = today + timedelta(days=1)
         advanced_task = make_task(
             task_id="tmp-1",
             content="__probe__",
@@ -229,7 +234,7 @@ class TestProbeNextDueDate:
 
         result = _probe_next_due_date(mock_api, "every day")
 
-        assert result == tomorrow
+        assert result == 1
         mock_api.add_task.assert_called_once_with(
             content="__probe__", due_string="every day"
         )
@@ -237,17 +242,22 @@ class TestProbeNextDueDate:
         mock_api.get_task.assert_called_once_with("tmp-1")
         mock_api.delete_task.assert_called_once_with("tmp-1")
 
-    def test_weekly_task_returns_next_week(self):
-        """A task with 'every week' should return a date 7 days from now."""
+    def test_weekly_task_returns_7_day_interval(self):
+        """A task with 'every week' should return an interval of 7."""
         from todoist.todoist_tasks import _probe_next_due_date
 
         mock_api = MagicMock()
 
-        temp_task = make_task(task_id="tmp-2", content="__probe__")
+        today = date.today()
+        temp_task = make_task(
+            task_id="tmp-2",
+            content="__probe__",
+            due=make_due(due_date=today),
+        )
         mock_api.add_task.return_value = temp_task
         mock_api.complete_task.return_value = True
 
-        next_week = date.today() + timedelta(days=7)
+        next_week = today + timedelta(days=7)
         advanced_task = make_task(
             task_id="tmp-2",
             content="__probe__",
@@ -258,7 +268,7 @@ class TestProbeNextDueDate:
 
         result = _probe_next_due_date(mock_api, "every week")
 
-        assert result == next_week
+        assert result == 7
 
     def test_cleanup_on_failure(self):
         """If complete_task fails, the temp task should still be deleted."""
@@ -266,7 +276,11 @@ class TestProbeNextDueDate:
 
         mock_api = MagicMock()
 
-        temp_task = make_task(task_id="tmp-3", content="__probe__")
+        temp_task = make_task(
+            task_id="tmp-3",
+            content="__probe__",
+            due=make_due(due_date=date.today()),
+        )
         mock_api.add_task.return_value = temp_task
         mock_api.complete_task.side_effect = Exception("API error")
         mock_api.delete_task.return_value = True
@@ -282,7 +296,11 @@ class TestProbeNextDueDate:
 
         mock_api = MagicMock()
 
-        temp_task = make_task(task_id="tmp-4", content="__probe__")
+        temp_task = make_task(
+            task_id="tmp-4",
+            content="__probe__",
+            due=make_due(due_date=date.today()),
+        )
         mock_api.add_task.return_value = temp_task
         mock_api.complete_task.return_value = True
 
@@ -295,17 +313,23 @@ class TestProbeNextDueDate:
         assert result is None
 
     def test_handles_datetime_due_date(self):
-        """If the advanced task returns a datetime (not date), normalize to date."""
+        """If due dates are datetimes (not dates), normalize and compute interval."""
         from todoist.todoist_tasks import _probe_next_due_date
 
         mock_api = MagicMock()
 
-        temp_task = make_task(task_id="tmp-5", content="__probe__")
+        today = date.today()
+        today_dt = datetime.combine(today, datetime.min.time())
+        temp_task = make_task(
+            task_id="tmp-5",
+            content="__probe__",
+            due=make_due(due_date=today_dt),
+        )
         mock_api.add_task.return_value = temp_task
         mock_api.complete_task.return_value = True
 
         # Return a datetime instead of a date
-        tomorrow = date.today() + timedelta(days=1)
+        tomorrow = today + timedelta(days=1)
         tomorrow_dt = datetime.combine(tomorrow, datetime.min.time())
         advanced_task = make_task(
             task_id="tmp-5",
@@ -317,7 +341,7 @@ class TestProbeNextDueDate:
 
         result = _probe_next_due_date(mock_api, "every day")
 
-        assert result == tomorrow
+        assert result == 1
 
 
 class TestResolveRecurrenceIntervalWithRetry:

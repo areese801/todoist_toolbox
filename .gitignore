@@ -37,6 +37,9 @@ venv/
 TODO.md
 docs/
 
+# Runtime cache
+.cache/
+
 # Ignore jupyter artifacts
 .ipynb
 .ipynb_checkpoints/
