@@ -4,7 +4,7 @@ import json
 import pytest
 from datetime import date, timedelta
 
-from todoist.cache import load_cache, save_cache, get_cached_due_date, MISS
+from todoist.cache import load_cache, save_cache, get_cached_interval, MISS
 
 
 class TestLoadCache:
@@ -33,11 +33,10 @@ class TestSaveCache:
         monkeypatch.setattr("todoist.cache.CACHE_DIR", cache_dir)
         monkeypatch.setattr("todoist.cache.CACHE_FILE", cache_file)
 
-        tomorrow = (date.today() + timedelta(days=1)).isoformat()
-        save_cache({"every day": tomorrow})
+        save_cache({"every day": 1})
 
         assert cache_file.exists()
-        assert json.loads(cache_file.read_text()) == {"every day": tomorrow}
+        assert json.loads(cache_file.read_text()) == {"every day": 1}
 
 
 class TestRoundTrip:
@@ -49,13 +48,10 @@ class TestRoundTrip:
         monkeypatch.setattr("todoist.cache.CACHE_DIR", tmp_path)
         monkeypatch.setattr("todoist.cache.CACHE_FILE", cache_file)
 
-        tomorrow = (date.today() + timedelta(days=1)).isoformat()
-        next_week = (date.today() + timedelta(days=7)).isoformat()
-        next_month = (date.today() + timedelta(days=30)).isoformat()
         data = {
-            "every day": tomorrow,
-            "every week": next_week,
-            "every month": next_month,
+            "every day": 1,
+            "every week": 7,
+            "every month": 30,
         }
         save_cache(data)
         assert load_cache() == data
@@ -66,53 +62,30 @@ class TestRoundTrip:
         monkeypatch.setattr("todoist.cache.CACHE_DIR", tmp_path)
         monkeypatch.setattr("todoist.cache.CACHE_FILE", cache_file)
 
-        tomorrow = (date.today() + timedelta(days=1)).isoformat()
-        data = {"every day": tomorrow, "weird schedule": None}
+        data = {"every day": 1, "weird schedule": None}
         save_cache(data)
         loaded = load_cache()
         assert loaded == data
         assert loaded["weird schedule"] is None
 
 
-class TestGetCachedDueDate:
-    """Tests for get_cached_due_date()."""
+class TestGetCachedInterval:
+    """Tests for get_cached_interval()."""
 
-    def test_returns_cached_value_for_future_date(self):
-        """When the cached date is in the future, return it."""
-        tomorrow = (date.today() + timedelta(days=1)).isoformat()
-        cache = {
-            "every day": tomorrow,
-            "every week": (date.today() + timedelta(days=7)).isoformat(),
-        }
-        assert get_cached_due_date(cache, "every day") == tomorrow
+    def test_returns_cached_interval(self):
+        """When the interval is cached, return it."""
+        cache = {"every day": 1, "every week": 7}
+        assert get_cached_interval(cache, "every day") == 1
+        assert get_cached_interval(cache, "every week") == 7
 
     def test_returns_cached_none(self):
         """When the cached value is None (failed probe), return None, not MISS."""
         cache = {"broken": None}
-        result = get_cached_due_date(cache, "broken")
+        result = get_cached_interval(cache, "broken")
         assert result is None
         assert result is not MISS
 
     def test_returns_miss_for_absent_key(self):
         """When the due_string is not in the cache, return MISS sentinel."""
-        tomorrow = (date.today() + timedelta(days=1)).isoformat()
-        cache = {"every day": tomorrow}
-        assert get_cached_due_date(cache, "every week") is MISS
-
-    def test_returns_miss_for_stale_date(self):
-        """When the cached date is in the past, return MISS (stale)."""
-        yesterday = (date.today() - timedelta(days=1)).isoformat()
-        cache = {"every day": yesterday}
-        assert get_cached_due_date(cache, "every day") is MISS
-
-    def test_returns_value_for_today(self):
-        """A cached date of today is still valid (not yet past)."""
-        today = date.today().isoformat()
-        cache = {"every day": today}
-        # today is not < today, so it should be a hit
-        assert get_cached_due_date(cache, "every day") == today
-
-    def test_returns_miss_for_corrupt_date_string(self):
-        """If the cached value is not a valid ISO date, return MISS."""
-        cache = {"every day": "not-a-date"}
-        assert get_cached_due_date(cache, "every day") is MISS
+        cache = {"every day": 1}
+        assert get_cached_interval(cache, "every week") is MISS

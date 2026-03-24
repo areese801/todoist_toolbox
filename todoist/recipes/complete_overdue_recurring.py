@@ -9,9 +9,9 @@ it does not delete it.
 """
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import date, datetime
+from datetime import datetime
 
-from todoist.cache import load_cache, save_cache, get_cached_due_date, MISS
+from todoist.cache import load_cache, save_cache, get_cached_interval, MISS
 from todoist.todoist_tasks import (
     get_overdue_recurring_tasks,
     _probe_next_due_date_with_retry,
@@ -28,29 +28,18 @@ def _ts():
     return datetime.now().strftime("%H:%M:%S.%f")[:-3]
 
 
-def _interval_from_due_date(due_date_iso: str | None) -> int | None:
+def _probe_intervals_parallel(api, due_strings: list[str]) -> dict[str, int | None]:
     """
-    Compute the recurrence interval in days from a cached ISO date string.
-
-    Returns None if the due_date_iso is None (failed probe).
-    """
-    if due_date_iso is None:
-        return None
-    return (date.fromisoformat(due_date_iso) - date.today()).days
-
-
-def _probe_due_dates_parallel(api, due_strings: list[str]) -> dict[str, str | None]:
-    """
-    Probe next due dates for a list of due strings in parallel.
+    Probe recurrence intervals for a list of due strings in parallel.
 
     Args:
         api: A TodoistAPI instance.
         due_strings: Due strings to probe.
 
     Returns:
-        Mapping of due_string -> ISO date string (or None on failure).
+        Mapping of due_string -> interval in days (or None on failure).
     """
-    results: dict[str, str | None] = {}
+    results: dict[str, int | None] = {}
     total = len(due_strings)
 
     with ThreadPoolExecutor(max_workers=3) as executor:
@@ -61,12 +50,10 @@ def _probe_due_dates_parallel(api, due_strings: list[str]) -> dict[str, str | No
         for i, future in enumerate(as_completed(future_to_ds), start=1):
             ds = future_to_ds[future]
             try:
-                next_due = future.result()
+                interval = future.result()
             except Exception:
-                next_due = None
-            iso = next_due.isoformat() if next_due is not None else None
-            results[ds] = iso
-            interval = _interval_from_due_date(iso)
+                interval = None
+            results[ds] = interval
             print(f'[{_ts()}] [{i}/{total}] "{ds}" -> {interval}d')
 
     return results
@@ -98,13 +85,12 @@ def run(args, api=None):
     unique_due_strings = list({task.due.string for task in overdue_tasks})
 
     # Load persistent cache and partition into hits vs misses
-    # Stale entries (cached date in the past) are returned as MISS
     persistent_cache = load_cache()
-    hits: dict[str, str | None] = {}
+    hits: dict[str, int | None] = {}
     misses: list[str] = []
 
     for ds in unique_due_strings:
-        cached = get_cached_due_date(persistent_cache, ds)
+        cached = get_cached_interval(persistent_cache, ds)
         if cached is not MISS:
             hits[ds] = cached
         else:
@@ -117,17 +103,16 @@ def run(args, api=None):
 
     # Probe cache misses in parallel
     if misses:
-        probed = _probe_due_dates_parallel(api, misses)
+        probed = _probe_intervals_parallel(api, misses)
         # Merge probed results into persistent cache and save
         persistent_cache.update(probed)
         save_cache(persistent_cache)
         hits.update(probed)
 
-    # Compute intervals from cached due dates and filter
+    # Filter tasks by cached interval
     qualifying = []
     for task in overdue_tasks:
-        due_date_iso = hits.get(task.due.string)
-        interval = _interval_from_due_date(due_date_iso)
+        interval = hits.get(task.due.string)
         if interval is not None and interval <= MAX_INTERVAL_DAYS:
             qualifying.append((task, interval))
 

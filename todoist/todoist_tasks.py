@@ -227,22 +227,30 @@ def get_overdue_non_recurring_tasks(api=None) -> list:
     return overdue_tasks
 
 
-def _probe_next_due_date(api, due_string: str) -> date | None:
+def _probe_next_due_date(api, due_string: str) -> int | None:
     """
-    Probe the Todoist API to determine the next due date for a due string.
+    Probe the Todoist API to determine the recurrence interval for a due string.
 
-    Creates a temporary task, completes it (advancing to next occurrence),
-    reads back the new due date, then deletes the temp task.
+    Creates a temporary task, records its initial due date, completes it
+    (advancing to the next occurrence), then computes the interval as the
+    difference between the two dates.
 
     Args:
         api: A TodoistAPI instance.
         due_string: A Todoist recurrence string (e.g., "every day", "every weekday").
 
     Returns:
-        The next due date, or None if resolution fails.
+        The recurrence interval in days, or None if resolution fails.
     """
     temp_task = api.add_task(content="__probe__", due_string=due_string)
     try:
+        # Capture the initial due date before completing
+        if temp_task.due is None:
+            return None
+        initial_due = temp_task.due.date
+        if isinstance(initial_due, datetime):
+            initial_due = initial_due.date()
+
         api.complete_task(temp_task.id)
         advanced_task = api.get_task(temp_task.id)
 
@@ -250,11 +258,10 @@ def _probe_next_due_date(api, due_string: str) -> date | None:
             return None
 
         next_due = advanced_task.due.date
-        # next_due may be a datetime or a date; normalize to date
         if isinstance(next_due, datetime):
             next_due = next_due.date()
 
-        return next_due
+        return (next_due - initial_due).days
     except Exception:
         return None
     finally:
@@ -266,7 +273,7 @@ logger = logging.getLogger(__name__)
 
 def _probe_next_due_date_with_retry(
     api, due_string: str, max_retries: int = 3
-) -> date | None:
+) -> int | None:
     """
     Wrap _probe_next_due_date with retry logic for 429 (rate limit) responses.
 
@@ -276,7 +283,7 @@ def _probe_next_due_date_with_retry(
         max_retries: Maximum number of attempts before giving up.
 
     Returns:
-        The next due date, or None if all attempts fail.
+        The recurrence interval in days, or None if all attempts fail.
     """
     from requests.exceptions import HTTPError
 
