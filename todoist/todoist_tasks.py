@@ -252,9 +252,17 @@ def _probe_next_due_date(api, due_string: str) -> int | None:
             initial_due = initial_due.date()
 
         api.complete_task(temp_task.id)
-        advanced_task = api.get_task(temp_task.id)
 
-        if advanced_task.due is None:
+        # Todoist may not advance the due date immediately after completion.
+        # Retry a few times with a short delay to let the server catch up.
+        advanced_task = None
+        for _attempt in range(5):
+            time.sleep(1)
+            advanced_task = api.get_task(temp_task.id)
+            if advanced_task.due is not None:
+                break
+
+        if advanced_task is None or advanced_task.due is None:
             return None
 
         next_due = advanced_task.due.date
