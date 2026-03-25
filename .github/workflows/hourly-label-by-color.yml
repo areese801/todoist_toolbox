@@ -1,0 +1,33 @@
+# Hourly Label by Color
+#
+# Labels all tasks in sky_blue projects with "Work".
+# Runs every hour so new tasks get labeled quickly.
+
+name: Hourly Label by Color
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # Every hour on the hour
+
+  workflow_dispatch:
+
+jobs:
+  label-by-color:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r todoist/requirements.txt
+
+      - name: Label sky_blue projects with Work
+        env:
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+        run: python -m todoist label-by-color --color sky_blue --label Work --execute
