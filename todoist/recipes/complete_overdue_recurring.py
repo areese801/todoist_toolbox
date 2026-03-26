@@ -104,8 +104,10 @@ def run(args, api=None):
     # Probe cache misses in parallel
     if misses:
         probed = _probe_intervals_parallel(api, misses)
-        # Merge probed results into persistent cache and save
-        persistent_cache.update(probed)
+        # Only cache successful probes — failed probes (None) should be
+        # retried on the next run, not permanently stored as failures.
+        successful_probes = {k: v for k, v in probed.items() if v is not None}
+        persistent_cache.update(successful_probes)
         save_cache(persistent_cache)
         hits.update(probed)
 
