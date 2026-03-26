@@ -242,10 +242,16 @@ def _probe_next_due_date(api, due_string: str) -> int | None:
     Returns:
         The recurrence interval in days, or None if resolution fails.
     """
-    temp_task = api.add_task(content="__probe__", due_string=due_string)
+    try:
+        temp_task = api.add_task(content="__probe__", due_string=due_string)
+    except Exception as ex:
+        print(f'  [probe] add_task failed for "{due_string}": {type(ex).__name__}: {ex}')
+        return None
+
     try:
         # Capture the initial due date before completing
         if temp_task.due is None:
+            print(f'  [probe] temp_task.due is None for "{due_string}"')
             return None
         initial_due = temp_task.due.date
         if isinstance(initial_due, datetime):
@@ -256,13 +262,15 @@ def _probe_next_due_date(api, due_string: str) -> int | None:
         # Todoist may not advance the due date immediately after completion.
         # Retry a few times with a short delay to let the server catch up.
         advanced_task = None
-        for _attempt in range(5):
+        for attempt in range(5):
             time.sleep(1)
             advanced_task = api.get_task(temp_task.id)
             if advanced_task.due is not None:
                 break
+            print(f'  [probe] attempt {attempt + 1}: due still None for "{due_string}"')
 
         if advanced_task is None or advanced_task.due is None:
+            print(f'  [probe] due remained None after 5 retries for "{due_string}"')
             return None
 
         next_due = advanced_task.due.date
@@ -270,10 +278,14 @@ def _probe_next_due_date(api, due_string: str) -> int | None:
             next_due = next_due.date()
 
         return (next_due - initial_due).days
-    except Exception:
+    except Exception as ex:
+        print(f'  [probe] exception for "{due_string}": {type(ex).__name__}: {ex}')
         return None
     finally:
-        api.delete_task(temp_task.id)
+        try:
+            api.delete_task(temp_task.id)
+        except Exception:
+            pass
 
 
 logger = logging.getLogger(__name__)
