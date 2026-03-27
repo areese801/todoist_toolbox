@@ -4,8 +4,8 @@ Persistent JSON-file-backed cache for recurrence interval lookups.
 Cache location follows XDG convention: ~/.cache/todoist-toolbox/interval_cache.json
 
 Values are integers representing the recurrence interval in days for a given
-recurrence pattern (e.g. "every day" -> 1, "every week" -> 7), or null if the
-probe failed. Intervals are stable properties of a due string and do not expire.
+recurrence pattern (e.g. "every day" -> 1, "every week" -> 7). Null values
+from failed probes are treated as cache misses and retried on the next run.
 """
 
 import json
@@ -41,8 +41,10 @@ def get_cached_interval(cache: dict[str, int | None], due_string: str) -> int | 
     """
     Look up a due_string in the cache.
 
-    Returns the cached interval in days (or None for failed probes), or MISS
-    if the key is absent.
+    Returns the cached interval in days, or MISS if the key is absent or
+    the cached value is None (a previously failed probe that should be retried).
     """
     value = cache.get(due_string, MISS)
+    if value is None:
+        return MISS
     return value
