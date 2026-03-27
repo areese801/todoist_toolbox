@@ -78,12 +78,11 @@ class TestGetCachedInterval:
         assert get_cached_interval(cache, "every day") == 1
         assert get_cached_interval(cache, "every week") == 7
 
-    def test_returns_cached_none(self):
-        """When the cached value is None (failed probe), return None, not MISS."""
+    def test_returns_miss_for_cached_none(self):
+        """When the cached value is None (failed probe), return MISS so it gets retried."""
         cache = {"broken": None}
         result = get_cached_interval(cache, "broken")
-        assert result is None
-        assert result is not MISS
+        assert result is MISS
 
     def test_returns_miss_for_absent_key(self):
         """When the due_string is not in the cache, return MISS sentinel."""
