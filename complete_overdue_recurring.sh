@@ -9,7 +9,6 @@
 # USAGE:
 #   ./complete_overdue_recurring.sh                  # Dry-run (default)
 #   ./complete_overdue_recurring.sh --execute        # Actually close qualifying tasks
-#   ./complete_overdue_recurring.sh --clear-cache    # Clear cached intervals first
 #   ./complete_overdue_recurring.sh --help           # Show help
 #
 # DEPENDENCIES:

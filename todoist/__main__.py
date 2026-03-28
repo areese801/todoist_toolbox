@@ -41,12 +41,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=False,
         help="Actually close tasks. Without this flag, only a dry-run is performed.",
     )
-    co_parser.add_argument(
-        "--clear-cache",
-        action="store_true",
-        default=False,
-        help="Clear the cached recurrence intervals before running.",
-    )
     co_parser.set_defaults(func=complete_overdue_recurring.run)
 
     # reschedule-overdue-nonrecurring

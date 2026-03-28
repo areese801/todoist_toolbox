@@ -37,8 +37,9 @@ venv/
 TODO.md
 docs/
 
-# Runtime cache
-.cache/
+# Skill artifacts (code review reports, etc.)
+.agent/
+
 
 # Ignore jupyter artifacts
 .ipynb
