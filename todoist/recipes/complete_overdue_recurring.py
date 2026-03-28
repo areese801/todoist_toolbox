@@ -11,7 +11,6 @@ it does not delete it.
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
-from todoist.cache import load_cache, save_cache, get_cached_interval, MISS
 from todoist.todoist_tasks import (
     get_overdue_recurring_tasks,
     _probe_next_due_date_with_retry,
@@ -66,14 +65,8 @@ def run(args, api=None):
 
     Args:
         args: An argparse.Namespace with at least an `execute` bool attribute.
-              Optional: `clear_cache` bool to reset the persistent cache.
         api: A TodoistAPI instance.
     """
-    # Handle --clear-cache
-    if getattr(args, "clear_cache", False):
-        save_cache({})
-        print(f"[{_ts()}] Cache cleared.")
-
     print(f"[{_ts()}] Fetching overdue recurring tasks...")
     overdue_tasks = get_overdue_recurring_tasks(api=api)
     print(f"[{_ts()}] Found {len(overdue_tasks)} overdue recurring task(s).")
@@ -82,40 +75,17 @@ def run(args, api=None):
         print("No overdue recurring tasks found.")
         return
 
-    # Collect unique due strings
+    # Collect unique due strings and probe them all fresh each run.
+    # An in-memory dict deduplicates within a single run so each
+    # due string is only probed once even if many tasks share it.
     unique_due_strings = list({task.due.string for task in overdue_tasks})
+    print(f"[{_ts()}] Probing {len(unique_due_strings)} unique interval(s)...")
+    intervals = _probe_intervals_parallel(api, unique_due_strings)
 
-    # Load persistent cache and partition into hits vs misses
-    persistent_cache = load_cache()
-    hits: dict[str, int | None] = {}
-    misses: list[str] = []
-
-    for ds in unique_due_strings:
-        cached = get_cached_interval(persistent_cache, ds)
-        if cached is not MISS:
-            hits[ds] = cached
-        else:
-            misses.append(ds)
-
-    if hits:
-        print(f"[{_ts()}] {len(hits)} interval(s) found in cache.")
-    if misses:
-        print(f"[{_ts()}] Probing {len(misses)} uncached interval(s)...")
-
-    # Probe cache misses in parallel
-    if misses:
-        probed = _probe_intervals_parallel(api, misses)
-        # Only cache successful probes — failed probes (None) should be
-        # retried on the next run, not permanently stored as failures.
-        successful_probes = {k: v for k, v in probed.items() if v is not None}
-        persistent_cache.update(successful_probes)
-        save_cache(persistent_cache)
-        hits.update(probed)
-
-    # Filter tasks by cached interval
+    # Filter tasks by probed interval
     qualifying = []
     for task in overdue_tasks:
-        interval = hits.get(task.due.string)
+        interval = intervals.get(task.due.string)
         if interval is not None and interval <= MAX_INTERVAL_DAYS:
             qualifying.append((task, interval))
 

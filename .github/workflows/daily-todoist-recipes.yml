@@ -42,16 +42,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r todoist/requirements.txt
 
-      # Restore the interval cache from a previous run (if any).
-      # This avoids re-probing recurrence intervals that we already know.
-      # The cache key is static because the cache content is what changes,
-      # not the key — we always want the latest saved version.
-      - name: Restore interval cache
-        uses: actions/cache@v4
-        with:
-          path: .cache/interval_cache.json
-          key: interval-cache
-
       # ----- Recipes -----
 
       # Recipe 1: Complete overdue recurring tasks.

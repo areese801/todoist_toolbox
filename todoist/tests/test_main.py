@@ -26,23 +26,14 @@ class TestCLIEntryPoint:
 
         assert args.execute is True
 
-    def test_complete_overdue_recurring_clear_cache_flag(self):
-        """--clear-cache flag should set args.clear_cache=True."""
+    def test_complete_overdue_recurring_no_clear_cache_flag(self):
+        """--clear-cache flag should no longer be accepted."""
         from todoist.__main__ import build_parser
+        import pytest
 
         parser = build_parser()
-        args = parser.parse_args(["complete-overdue-recurring", "--clear-cache"])
-
-        assert args.clear_cache is True
-
-    def test_complete_overdue_recurring_clear_cache_default(self):
-        """--clear-cache should default to False."""
-        from todoist.__main__ import build_parser
-
-        parser = build_parser()
-        args = parser.parse_args(["complete-overdue-recurring"])
-
-        assert args.clear_cache is False
+        with pytest.raises(SystemExit):
+            parser.parse_args(["complete-overdue-recurring", "--clear-cache"])
 
     def test_reschedule_overdue_nonrecurring_subcommand_dispatches(self):
         """'reschedule-overdue-nonrecurring' subcommand should parse and default to dry-run."""
