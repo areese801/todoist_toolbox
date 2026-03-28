@@ -51,7 +51,8 @@ def _probe_intervals_parallel(api, due_strings: list[str]) -> dict[str, int | No
             ds = future_to_ds[future]
             try:
                 interval = future.result()
-            except Exception:
+            except Exception as ex:
+                print(f'[{_ts()}] [probe] "{ds}" raised {type(ex).__name__}: {ex}')
                 interval = None
             results[ds] = interval
             print(f'[{_ts()}] [{i}/{total}] "{ds}" -> {interval}d')
