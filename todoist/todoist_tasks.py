@@ -305,13 +305,29 @@ def _probe_next_due_date_with_retry(
     Returns:
         The recurrence interval in days, or None if all attempts fail.
     """
-    from requests.exceptions import HTTPError
+    # The Todoist SDK may use requests (v3) or httpx (v4+). Import whichever
+    # HTTP error class is available so we can catch 429 rate limits.
+    try:
+        from requests.exceptions import HTTPError
+    except ImportError:
+        try:
+            from httpx import HTTPStatusError as HTTPError
+        except ImportError:
+            HTTPError = None
 
     for attempt in range(max_retries):
         try:
             return _probe_next_due_date(api, due_string)
-        except HTTPError as exc:
-            if exc.response is not None and exc.response.status_code == 429:
+        except Exception as exc:
+            # Check if this is a 429 rate limit we should retry
+            is_rate_limit = (
+                HTTPError is not None
+                and isinstance(exc, HTTPError)
+                and hasattr(exc, "response")
+                and exc.response is not None
+                and exc.response.status_code == 429
+            )
+            if is_rate_limit:
                 retry_after = int(exc.response.headers.get("Retry-After", 2))
                 logger.debug(
                     "429 on attempt %d/%d for '%s', sleeping %ds",
