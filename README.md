@@ -41,6 +41,10 @@ TODOIST_LABEL_NAME=Work
 
 Then just: `./label_by_color.sh --execute`
 
+## Opting tasks out of automation
+
+Add the `_no_robots` label to any Todoist task to exclude it from automation. Both `complete-overdue-recurring` and `reschedule-overdue-nonrecurring` will skip tasks with this label and log how many were skipped. `label-by-color` does not check for this label.
+
 ## Setup
 
 Requires Python 3.10+.
