@@ -15,6 +15,7 @@ from todoist.todoist_tasks import (
     get_overdue_recurring_tasks,
     _probe_next_due_date_with_retry,
     _task_link,
+    NO_ROBOTS_LABEL,
 )
 
 MAX_INTERVAL_DAYS = 7
@@ -68,7 +69,13 @@ def run(args, api=None):
         api: A TodoistAPI instance.
     """
     print(f"[{_ts()}] Fetching overdue recurring tasks...")
-    overdue_tasks = get_overdue_recurring_tasks(api=api)
+    all_overdue = get_overdue_recurring_tasks(api=api)
+
+    skipped = [t for t in all_overdue if NO_ROBOTS_LABEL in t.labels]
+    overdue_tasks = [t for t in all_overdue if NO_ROBOTS_LABEL not in t.labels]
+
+    if skipped:
+        print(f"[{_ts()}] Skipping {len(skipped)} task(s) with '{NO_ROBOTS_LABEL}' label.")
     print(f"[{_ts()}] Found {len(overdue_tasks)} overdue recurring task(s).")
 
     if not overdue_tasks:

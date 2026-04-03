@@ -59,6 +59,104 @@ class TestRescheduleOverdueDryRun:
         assert "No overdue non-recurring tasks found." in output
 
 
+class TestNoRobotsLabel:
+    """Tests for _no_robots label skipping."""
+
+    def test_tasks_with_no_robots_label_are_skipped_dry_run(self, capsys):
+        """Tasks with _no_robots label should be excluded in dry-run."""
+        from todoist.recipes.reschedule_overdue_nonrecurring import run
+
+        yesterday = date.today() - timedelta(days=1)
+        normal = make_task(
+            task_id="1",
+            content="Buy groceries",
+            due=make_due(due_date=yesterday, is_recurring=False),
+            labels=[],
+        )
+        protected = make_task(
+            task_id="2",
+            content="Protected task",
+            due=make_due(due_date=yesterday, is_recurring=False),
+            labels=["_no_robots"],
+        )
+
+        mock_api = MagicMock()
+        args = MagicMock()
+        args.execute = False
+
+        with patch(
+            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+            return_value=[normal, protected],
+        ):
+            run(args, api=mock_api)
+
+        output = capsys.readouterr().out
+        assert "Buy groceries" in output
+        assert "Protected task" not in output
+        assert "Skipping 1 task(s)" in output
+        mock_api.update_task.assert_not_called()
+
+    def test_tasks_with_no_robots_label_are_skipped_execute(self, capsys):
+        """Tasks with _no_robots label should not be rescheduled in execute mode."""
+        from todoist.recipes.reschedule_overdue_nonrecurring import run
+
+        yesterday = date.today() - timedelta(days=1)
+        normal = make_task(
+            task_id="1",
+            content="Buy groceries",
+            due=make_due(due_date=yesterday, is_recurring=False),
+            labels=[],
+        )
+        protected = make_task(
+            task_id="2",
+            content="Protected task",
+            due=make_due(due_date=yesterday, is_recurring=False),
+            labels=["_no_robots"],
+        )
+
+        mock_api = MagicMock()
+        args = MagicMock()
+        args.execute = True
+
+        with patch(
+            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+            return_value=[normal, protected],
+        ):
+            run(args, api=mock_api)
+
+        mock_api.update_task.assert_called_once_with("1", due_string="today")
+        output = capsys.readouterr().out
+        assert "Rescheduled 1 of 1" in output
+        assert "Skipping 1 task(s)" in output
+
+    def test_all_tasks_with_no_robots_label(self, capsys):
+        """If all tasks have _no_robots, none should be processed."""
+        from todoist.recipes.reschedule_overdue_nonrecurring import run
+
+        yesterday = date.today() - timedelta(days=1)
+        t1 = make_task(
+            task_id="1",
+            content="Protected",
+            due=make_due(due_date=yesterday, is_recurring=False),
+            labels=["_no_robots"],
+        )
+
+        mock_api = MagicMock()
+        args = MagicMock()
+        args.execute = True
+
+        with patch(
+            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+            return_value=[t1],
+        ):
+            run(args, api=mock_api)
+
+        output = capsys.readouterr().out
+        assert "Skipping 1 task(s)" in output
+        assert "No overdue non-recurring tasks found." in output
+        mock_api.update_task.assert_not_called()
+
+
 class TestRescheduleOverdueExecute:
     """Tests for execute mode of reschedule-overdue-nonrecurring."""
 

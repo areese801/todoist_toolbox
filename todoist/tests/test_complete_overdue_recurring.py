@@ -180,6 +180,111 @@ class TestCompleteOverdueExecute:
         assert "Closed 1 of 2" in output
 
 
+class TestNoRobotsLabel:
+    """Tests for _no_robots label skipping."""
+
+    def test_tasks_with_no_robots_label_are_skipped(self, capsys):
+        """Tasks with the _no_robots label should be excluded from processing."""
+        from todoist.recipes.complete_overdue_recurring import run
+
+        yesterday = date.today() - timedelta(days=1)
+
+        robot_task = make_task(
+            task_id="1",
+            content="Automated standup",
+            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
+            labels=[],
+        )
+        no_robot_task = make_task(
+            task_id="2",
+            content="Manual review",
+            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
+            labels=["_no_robots"],
+        )
+
+        mock_api = MagicMock()
+
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[robot_task, no_robot_task],
+            ),
+            _patch_probes_with({"every day": 1}),
+        ):
+            args = argparse.Namespace(execute=False)
+            run(args, api=mock_api)
+
+        output = capsys.readouterr().out
+        assert "Automated standup" in output
+        assert "Manual review" not in output
+        assert "Skipping 1 task(s)" in output
+
+    def test_all_tasks_with_no_robots_label_yields_no_qualifying(self, capsys):
+        """If all overdue tasks have _no_robots, none should qualify."""
+        from todoist.recipes.complete_overdue_recurring import run
+
+        yesterday = date.today() - timedelta(days=1)
+
+        t1 = make_task(
+            task_id="1",
+            content="No robots task",
+            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
+            labels=["_no_robots"],
+        )
+
+        mock_api = MagicMock()
+
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[t1],
+            ),
+            _patch_probes_with({}),
+        ):
+            args = argparse.Namespace(execute=False)
+            run(args, api=mock_api)
+
+        output = capsys.readouterr().out
+        assert "Skipping 1 task(s)" in output
+        mock_api.complete_task.assert_not_called()
+
+    def test_no_robots_tasks_not_closed_in_execute_mode(self, capsys):
+        """In execute mode, _no_robots tasks should not be closed."""
+        from todoist.recipes.complete_overdue_recurring import run
+
+        yesterday = date.today() - timedelta(days=1)
+
+        normal_task = make_task(
+            task_id="1",
+            content="Normal task",
+            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
+            labels=[],
+        )
+        no_robot_task = make_task(
+            task_id="2",
+            content="Protected task",
+            due=make_due(due_date=yesterday, due_string="every day", is_recurring=True),
+            labels=["_no_robots"],
+        )
+
+        mock_api = MagicMock()
+        mock_api.complete_task.return_value = True
+
+        with (
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[normal_task, no_robot_task],
+            ),
+            _patch_probes_with({"every day": 1}),
+        ):
+            args = argparse.Namespace(execute=True)
+            run(args, api=mock_api)
+
+        mock_api.complete_task.assert_called_once_with("1")
+        output = capsys.readouterr().out
+        assert "Closed 1 of 1" in output
+
+
 class TestProbeDeduplication:
     """Tests for in-memory probe deduplication."""
 
