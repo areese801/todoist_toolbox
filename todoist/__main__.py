@@ -8,6 +8,7 @@ Recipes:
     complete-overdue-recurring         Close overdue recurring tasks (dry-run by default)
     reschedule-overdue-nonrecurring    Reschedule overdue non-recurring tasks to today (dry-run by default)
     label-by-color                     Apply a label to all tasks under projects of a given color
+    reschedule-work-to-monday          Reschedule overdue work tasks to next Monday (Friday evening)
 """
 
 import argparse
@@ -18,6 +19,7 @@ from todoist.todoist_tasks import _get_api_token
 from todoist.recipes import complete_overdue_recurring
 from todoist.recipes import reschedule_overdue_nonrecurring
 from todoist.recipes import label_by_color
+from todoist.recipes import reschedule_work_to_monday
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -78,6 +80,25 @@ def build_parser() -> argparse.ArgumentParser:
         help="Actually apply labels. Without this flag, only a dry-run is performed.",
     )
     lbc_parser.set_defaults(func=label_by_color.run)
+
+    # reschedule-work-to-monday
+    rwm_parser = subparsers.add_parser(
+        "reschedule-work-to-monday",
+        help="Reschedule overdue work tasks to next Monday (designed for Friday evening).",
+    )
+    rwm_parser.add_argument(
+        "--execute",
+        action="store_true",
+        default=False,
+        help="Actually reschedule tasks. Without this flag, only a dry-run is performed.",
+    )
+    rwm_parser.add_argument(
+        "--force",
+        action="store_true",
+        default=False,
+        help="Bypass the day/time check (normally only runs Friday evening or weekends).",
+    )
+    rwm_parser.set_defaults(func=reschedule_work_to_monday.run)
 
     return parser
 
