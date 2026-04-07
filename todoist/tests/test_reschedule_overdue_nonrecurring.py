@@ -6,6 +6,22 @@ from datetime import date, timedelta
 from todoist.tests.helpers import make_task, make_due
 
 
+_TEST_CONFIG = {
+    "work_label": "Work",
+    "project_color": "sky_blue",
+    "no_robots_label": "_no_robots",
+    "timezone": "America/Denver",
+    "friday_cutoff_hour": 18,
+}
+
+
+def _patch_config():
+    return patch(
+        "todoist.recipes.reschedule_overdue_nonrecurring.get_config",
+        return_value=_TEST_CONFIG,
+    )
+
+
 class TestRescheduleOverdueDryRun:
     """Tests for dry-run mode of reschedule-overdue-nonrecurring."""
 
@@ -29,9 +45,12 @@ class TestRescheduleOverdueDryRun:
         args = MagicMock()
         args.execute = False
 
-        with patch(
-            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
-            return_value=[t1, t2],
+        with (
+            _patch_config(),
+            patch(
+                "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+                return_value=[t1, t2],
+            ),
         ):
             run(args, api=mock_api)
 
@@ -49,9 +68,12 @@ class TestRescheduleOverdueDryRun:
         args = MagicMock()
         args.execute = False
 
-        with patch(
-            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
-            return_value=[],
+        with (
+            _patch_config(),
+            patch(
+                "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+                return_value=[],
+            ),
         ):
             run(args, api=mock_api)
 
@@ -84,9 +106,12 @@ class TestNoRobotsLabel:
         args = MagicMock()
         args.execute = False
 
-        with patch(
-            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
-            return_value=[normal, protected],
+        with (
+            _patch_config(),
+            patch(
+                "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+                return_value=[normal, protected],
+            ),
         ):
             run(args, api=mock_api)
 
@@ -118,9 +143,12 @@ class TestNoRobotsLabel:
         args = MagicMock()
         args.execute = True
 
-        with patch(
-            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
-            return_value=[normal, protected],
+        with (
+            _patch_config(),
+            patch(
+                "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+                return_value=[normal, protected],
+            ),
         ):
             run(args, api=mock_api)
 
@@ -145,9 +173,12 @@ class TestNoRobotsLabel:
         args = MagicMock()
         args.execute = True
 
-        with patch(
-            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
-            return_value=[t1],
+        with (
+            _patch_config(),
+            patch(
+                "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+                return_value=[t1],
+            ),
         ):
             run(args, api=mock_api)
 
@@ -180,9 +211,12 @@ class TestRescheduleOverdueExecute:
         args = MagicMock()
         args.execute = True
 
-        with patch(
-            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
-            return_value=[t1, t2],
+        with (
+            _patch_config(),
+            patch(
+                "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+                return_value=[t1, t2],
+            ),
         ):
             run(args, api=mock_api)
 
@@ -214,9 +248,12 @@ class TestRescheduleOverdueExecute:
         args = MagicMock()
         args.execute = True
 
-        with patch(
-            "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
-            return_value=[t1, t2],
+        with (
+            _patch_config(),
+            patch(
+                "todoist.recipes.reschedule_overdue_nonrecurring.get_overdue_non_recurring_tasks",
+                return_value=[t1, t2],
+            ),
         ):
             run(args, api=mock_api)
 

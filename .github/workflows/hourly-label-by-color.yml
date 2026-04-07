@@ -1,6 +1,7 @@
 # Hourly Label by Color
 #
-# Labels all tasks in sky_blue projects with "Work".
+# Labels tasks in projects matching the configured color with the configured label.
+# Color and label are read from todoist/config.json.
 # Runs every hour so new tasks get labeled quickly.
 
 name: Hourly Label by Color
@@ -27,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r todoist/requirements.txt
 
-      - name: Label sky_blue projects with Work
+      - name: Label projects by color
         env:
           TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
-        run: python -m todoist label-by-color --color sky_blue --label Work --execute
+        run: python -m todoist label-by-color --execute

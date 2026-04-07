@@ -46,8 +46,6 @@ def _get_api_token():
 
 TODOIST_TASK_URL = "https://app.todoist.com/app/task/{task_id}"
 
-NO_ROBOTS_LABEL = "_no_robots"
-
 
 def _task_link(task: Task) -> str:
     """

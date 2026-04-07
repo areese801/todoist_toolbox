@@ -61,7 +61,12 @@ class TestLabelByColorConfigResolution:
         args.color = None
         args.label = "work"
 
-        with patch.dict(os.environ, {}, clear=True), pytest.raises(SystemExit):
+        empty_config = {"project_color": None, "work_label": None}
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("todoist.recipes.label_by_color.get_config", return_value=empty_config),
+            pytest.raises(SystemExit),
+        ):
             _resolve_config(args)
 
     def test_error_when_label_missing(self):
@@ -73,7 +78,12 @@ class TestLabelByColorConfigResolution:
         args.color = "sky_blue"
         args.label = None
 
-        with patch.dict(os.environ, {}, clear=True), pytest.raises(SystemExit):
+        empty_config = {"project_color": None, "work_label": None}
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("todoist.recipes.label_by_color.get_config", return_value=empty_config),
+            pytest.raises(SystemExit),
+        ):
             _resolve_config(args)
 
 

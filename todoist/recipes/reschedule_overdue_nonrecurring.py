@@ -5,7 +5,8 @@ Identifies overdue non-recurring Todoist tasks and reschedules them to today.
 Dry-run is the default.
 """
 
-from todoist.todoist_tasks import get_overdue_non_recurring_tasks, _task_link, NO_ROBOTS_LABEL
+from todoist.config import get_config
+from todoist.todoist_tasks import get_overdue_non_recurring_tasks, _task_link
 
 
 def run(args, api=None):
@@ -16,13 +17,16 @@ def run(args, api=None):
         args: An argparse.Namespace with at least an `execute` bool attribute.
         api: A TodoistAPI instance.
     """
+    config = get_config()
+    no_robots_label = config["no_robots_label"]
+
     all_overdue = get_overdue_non_recurring_tasks(api=api)
 
-    skipped = [t for t in all_overdue if NO_ROBOTS_LABEL in t.labels]
-    overdue_tasks = [t for t in all_overdue if NO_ROBOTS_LABEL not in t.labels]
+    skipped = [t for t in all_overdue if no_robots_label in t.labels]
+    overdue_tasks = [t for t in all_overdue if no_robots_label not in t.labels]
 
     if skipped:
-        print(f"Skipping {len(skipped)} task(s) with '{NO_ROBOTS_LABEL}' label.")
+        print(f"Skipping {len(skipped)} task(s) with '{no_robots_label}' label.")
 
     if not overdue_tasks:
         print("No overdue non-recurring tasks found.")

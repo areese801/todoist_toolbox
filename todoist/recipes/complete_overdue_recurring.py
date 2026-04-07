@@ -11,11 +11,11 @@ it does not delete it.
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
+from todoist.config import get_config
 from todoist.todoist_tasks import (
     get_overdue_recurring_tasks,
     _probe_next_due_date_with_retry,
     _task_link,
-    NO_ROBOTS_LABEL,
 )
 
 MAX_INTERVAL_DAYS = 7
@@ -68,14 +68,17 @@ def run(args, api=None):
         args: An argparse.Namespace with at least an `execute` bool attribute.
         api: A TodoistAPI instance.
     """
+    config = get_config()
+    no_robots_label = config["no_robots_label"]
+
     print(f"[{_ts()}] Fetching overdue recurring tasks...")
     all_overdue = get_overdue_recurring_tasks(api=api)
 
-    skipped = [t for t in all_overdue if NO_ROBOTS_LABEL in t.labels]
-    overdue_tasks = [t for t in all_overdue if NO_ROBOTS_LABEL not in t.labels]
+    skipped = [t for t in all_overdue if no_robots_label in t.labels]
+    overdue_tasks = [t for t in all_overdue if no_robots_label not in t.labels]
 
     if skipped:
-        print(f"[{_ts()}] Skipping {len(skipped)} task(s) with '{NO_ROBOTS_LABEL}' label.")
+        print(f"[{_ts()}] Skipping {len(skipped)} task(s) with '{no_robots_label}' label.")
     print(f"[{_ts()}] Found {len(overdue_tasks)} overdue recurring task(s).")
 
     if not overdue_tasks:

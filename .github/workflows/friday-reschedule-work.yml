@@ -1,0 +1,37 @@
+# Friday Work-to-Monday Reschedule
+#
+# Reschedules overdue work-labeled tasks to the following Monday.
+# Runs Friday at 6 PM MT (midnight UTC Saturday).
+#
+# The recipe has its own day/time guardrails, so a misfired cron
+# on the wrong day will safely no-op.
+
+name: Friday Work to Monday
+
+on:
+  schedule:
+    # Midnight Saturday UTC = 6 PM Friday MST / 5 PM Friday MDT
+    - cron: "0 0 * * 6"
+
+  workflow_dispatch:
+
+jobs:
+  reschedule-work:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r todoist/requirements.txt
+
+      - name: Reschedule overdue work tasks to Monday
+        env:
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+        run: python -m todoist reschedule-work-to-monday --execute
