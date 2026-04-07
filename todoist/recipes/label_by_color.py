@@ -8,6 +8,7 @@ Dry-run is the default.
 import os
 import sys
 
+from todoist.config import get_config
 from todoist.todoist_tasks import get_active_tasks, get_projects, _task_link
 
 
@@ -22,8 +23,9 @@ def _resolve_config(args):
     Raises:
         SystemExit if either value cannot be resolved.
     """
-    color = args.color or os.environ.get("TODOIST_LABEL_COLOR")
-    label = args.label or os.environ.get("TODOIST_LABEL_NAME")
+    config = get_config()
+    color = args.color or os.environ.get("TODOIST_LABEL_COLOR") or config.get("project_color")
+    label = args.label or os.environ.get("TODOIST_LABEL_NAME") or config.get("work_label")
 
     if not color:
         print(
