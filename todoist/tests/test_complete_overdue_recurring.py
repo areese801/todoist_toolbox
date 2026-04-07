@@ -7,6 +7,22 @@ from datetime import date, timedelta
 from todoist.tests.helpers import make_task, make_due
 
 
+_TEST_CONFIG = {
+    "work_label": "Work",
+    "project_color": "sky_blue",
+    "no_robots_label": "_no_robots",
+    "timezone": "America/Denver",
+    "friday_cutoff_hour": 18,
+}
+
+
+def _patch_config():
+    return patch(
+        "todoist.recipes.complete_overdue_recurring.get_config",
+        return_value=_TEST_CONFIG,
+    )
+
+
 def _patch_probes_with(intervals: dict[str, int | None]):
     """
     Return a context manager that patches _probe_intervals_parallel to
@@ -43,6 +59,7 @@ class TestCompleteOverdueDryRun:
         mock_api = MagicMock()
 
         with (
+            _patch_config(),
             patch(
                 "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
                 return_value=[t1, t2],
@@ -63,9 +80,12 @@ class TestCompleteOverdueDryRun:
 
         mock_api = MagicMock()
 
-        with patch(
-            "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
-            return_value=[],
+        with (
+            _patch_config(),
+            patch(
+                "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
+                return_value=[],
+            ),
         ):
             args = argparse.Namespace(execute=False)
             run(args, api=mock_api)
@@ -89,6 +109,7 @@ class TestCompleteOverdueDryRun:
         mock_api = MagicMock()
 
         with (
+            _patch_config(),
             patch(
                 "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
                 return_value=[t1],
@@ -128,6 +149,7 @@ class TestCompleteOverdueExecute:
         mock_api.complete_task.return_value = True
 
         with (
+            _patch_config(),
             patch(
                 "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
                 return_value=[t1, t2],
@@ -165,6 +187,7 @@ class TestCompleteOverdueExecute:
         mock_api.complete_task.side_effect = [Exception("API down"), True]
 
         with (
+            _patch_config(),
             patch(
                 "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
                 return_value=[t1, t2],
@@ -205,6 +228,7 @@ class TestNoRobotsLabel:
         mock_api = MagicMock()
 
         with (
+            _patch_config(),
             patch(
                 "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
                 return_value=[robot_task, no_robot_task],
@@ -235,6 +259,7 @@ class TestNoRobotsLabel:
         mock_api = MagicMock()
 
         with (
+            _patch_config(),
             patch(
                 "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
                 return_value=[t1],
@@ -271,6 +296,7 @@ class TestNoRobotsLabel:
         mock_api.complete_task.return_value = True
 
         with (
+            _patch_config(),
             patch(
                 "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
                 return_value=[normal_task, no_robot_task],
@@ -308,6 +334,7 @@ class TestProbeDeduplication:
         mock_probe_parallel = MagicMock(return_value={"every day": 1})
 
         with (
+            _patch_config(),
             patch(
                 "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
                 return_value=tasks,
@@ -342,6 +369,7 @@ class TestProbeDeduplication:
         mock_api = MagicMock()
 
         with (
+            _patch_config(),
             patch(
                 "todoist.recipes.complete_overdue_recurring.get_overdue_recurring_tasks",
                 return_value=[t1],
