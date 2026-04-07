@@ -57,17 +57,16 @@ pip install -r todoist/requirements.txt
 
 ### Environment variables
 
-Copy the example file and fill in your token:
+Create a `todoist/.env` file (see `todoist/.env_EXAMPLE` for the template):
 
 ```bash
-cp todoist/.env_EXAMPLE todoist/.env
+# todoist/.env
+TODOIST_API_TOKEN=your-token-here
 ```
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `TODOIST_API_TOKEN` | Yes | Your Todoist API token (literal string or path to a file containing it) |
-| `TODOIST_LABEL_COLOR` | No | Fallback project color for `label-by-color` (e.g., `sky_blue`) |
-| `TODOIST_LABEL_NAME` | No | Fallback label name for `label-by-color` (e.g., `Work`) |
+The value can be the token itself or a path to a file containing it.
+
+The `label-by-color` recipe also accepts optional env var fallbacks (`TODOIST_LABEL_COLOR`, `TODOIST_LABEL_NAME`) if you prefer not to pass `--color` and `--label` each time.
 
 ## GitHub Actions
 

@@ -8,9 +8,14 @@ from todoist_api_python.models import Due
 from dotenv import load_dotenv
 import logging
 import os
+from pathlib import Path
 import sys
 import time
 from datetime import date, datetime
+
+# Resolve the .env path relative to this file (todoist/.env)
+# so load_dotenv works regardless of the working directory.
+_DOTENV_PATH = Path(__file__).resolve().parent / ".env"
 
 
 def _get_api_token():
@@ -22,7 +27,7 @@ def _get_api_token():
     the literal token string.
     """
 
-    load_dotenv()
+    load_dotenv(_DOTENV_PATH)
     raw_value = os.getenv("TODOIST_API_TOKEN")
 
     if not raw_value:

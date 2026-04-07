@@ -7,8 +7,8 @@
 # Activates the project venv and runs the CLI entry point.
 #
 # USAGE:
-#   ./label_by_color.sh --color sky_blue --label work             # Dry-run
-#   ./label_by_color.sh --color sky_blue --label work --execute   # Apply labels
+#   ./label_by_color.sh --color sky_blue --label Work             # Dry-run
+#   ./label_by_color.sh --color sky_blue --label Work --execute   # Apply labels
 #   ./label_by_color.sh --help                                    # Show help
 #
 # DEPENDENCIES:
