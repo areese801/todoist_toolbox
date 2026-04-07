@@ -24,26 +24,28 @@ Finds overdue non-recurring (one-off) tasks and reschedules them to today.
 
 ### label-by-color
 
-Applies a label to all tasks under projects of a given color. Useful for tagging everything in a work project (e.g., all tasks under a `sky_blue` project get the `Work` label).
+Applies a label to all tasks under projects of a given color. Defaults to the color and label in `config.json`, or can be overridden with CLI args or env vars.
 
 ```bash
-./label_by_color.sh --color sky_blue --label Work              # dry-run (default)
-./label_by_color.sh --color sky_blue --label Work --execute    # actually apply labels
+./label_by_color.sh                                                  # dry-run with config defaults
+./label_by_color.sh --color sky_blue --label Work --execute          # override and execute
 ```
 
-For cron use, set env vars instead of passing args each time:
+### reschedule-work-to-monday
+
+Reschedules overdue non-recurring tasks with the configured work label to the following Monday. Designed to run Friday evening so leftover work tasks get a clean start next week.
+
+Has built-in day/time guardrails: only runs on Friday after 6 PM, Saturday, or Sunday. Use `--force` to bypass.
 
 ```bash
-# in todoist/.env
-TODOIST_LABEL_COLOR=sky_blue
-TODOIST_LABEL_NAME=Work
+./reschedule_work_to_monday.sh                  # dry-run (default)
+./reschedule_work_to_monday.sh --execute        # actually reschedule to Monday
+./reschedule_work_to_monday.sh --force          # bypass day/time check
 ```
-
-Then just: `./label_by_color.sh --execute`
 
 ## Opting tasks out of automation
 
-Add the `_no_robots` label to any Todoist task to exclude it from automation. Both `complete-overdue-recurring` and `reschedule-overdue-nonrecurring` will skip tasks with this label and log how many were skipped. `label-by-color` does not check for this label.
+Add the `_no_robots` label to any Todoist task to exclude it from automation. The `complete-overdue-recurring`, `reschedule-overdue-nonrecurring`, and `reschedule-work-to-monday` recipes will skip tasks with this label and log how many were skipped. `label-by-color` does not check for this label. The label name is configurable in `config.json`.
 
 ## Setup
 
@@ -54,6 +56,22 @@ python -m venv todoist/venv
 source todoist/venv/bin/activate
 pip install -r todoist/requirements.txt
 ```
+
+### Configuration
+
+Non-sensitive settings live in `todoist/config.json` (committed to version control):
+
+```json
+{
+  "work_label": "Work",
+  "project_color": "sky_blue",
+  "no_robots_label": "_no_robots",
+  "timezone": "America/Denver",
+  "friday_cutoff_hour": 18
+}
+```
+
+Recipes read from this file for label names, project colors, timezone, and the Friday cutoff hour.
 
 ### Environment variables
 
@@ -66,16 +84,17 @@ TODOIST_API_TOKEN=your-token-here
 
 The value can be the token itself or a path to a file containing it.
 
-The `label-by-color` recipe also accepts optional env var fallbacks (`TODOIST_LABEL_COLOR`, `TODOIST_LABEL_NAME`) if you prefer not to pass `--color` and `--label` each time.
+The `label-by-color` recipe also accepts optional env var overrides (`TODOIST_LABEL_COLOR`, `TODOIST_LABEL_NAME`) which take precedence over `config.json`.
 
 ## GitHub Actions
 
-Two workflows run automatically via GitHub Actions:
+Three workflows run automatically via GitHub Actions:
 
 - **Daily Todoist Recipes** (`daily-todoist-recipes.yml`) — runs at 5 AM MT (11:00 UTC) each day. Executes `complete-overdue-recurring` and `reschedule-overdue-nonrecurring`.
-- **Hourly Label by Color** (`hourly-label-by-color.yml`) — runs every hour. Labels tasks in `sky_blue` projects with `Work`.
+- **Hourly Label by Color** (`hourly-label-by-color.yml`) — runs every hour. Labels tasks using the color and label from `config.json`.
+- **Friday Work to Monday** (`friday-reschedule-work.yml`) — runs Friday at 6 PM MT (midnight Saturday UTC). Reschedules overdue work-labeled tasks to the following Monday.
 
-Both can also be triggered manually from the Actions tab (`workflow_dispatch`).
+All can be triggered manually from the Actions tab (`workflow_dispatch`).
 
 The `TODOIST_API_TOKEN` secret must be set in the repository's Settings > Secrets > Actions.
 
@@ -85,7 +104,8 @@ The `TODOIST_API_TOKEN` secret must be set in the repository's Settings > Secret
 source todoist/venv/bin/activate
 python -m todoist complete-overdue-recurring
 python -m todoist reschedule-overdue-nonrecurring
-python -m todoist label-by-color --color sky_blue --label Work
+python -m todoist label-by-color
+python -m todoist reschedule-work-to-monday --force    # bypass day/time check
 ```
 
 ## Tests
