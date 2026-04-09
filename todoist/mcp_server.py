@@ -32,7 +32,8 @@ It will sit waiting for JSON-RPC messages on stdin (Ctrl-C to quit).
 from mcp.server.fastmcp import FastMCP
 from todoist_api_python.api import TodoistAPI
 
-from todoist.todoist_tasks import _get_api_token, get_active_tasks, get_projects
+from todoist.todoist_tasks import _get_api_token, get_active_tasks
+from todoist.todoist_tasks import get_projects as _get_projects_from_api
 from todoist.config import get_config
 
 
@@ -147,7 +148,7 @@ def get_tasks(
     api = _get_api()
 
     # Build a project id->name map for enrichment
-    projects = get_projects(api=api)
+    projects = _get_projects_from_api(api=api)
     project_map = {p.id: p.name for p in projects}
 
     # If a Todoist filter string was provided, use the API's native filter
@@ -156,7 +157,7 @@ def get_tasks(
     if filter:
         try:
             tasks = []
-            for page in api.get_tasks(filter=filter):
+            for page in api.filter_tasks(query=filter):
                 tasks.extend(page)
         except Exception as e:
             return [{"error": f"Todoist filter query failed: {e}"}]
