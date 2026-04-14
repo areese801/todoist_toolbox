@@ -199,7 +199,8 @@ def get_tasks(
     if project_name:
         project_name_lower = project_name.lower()
         tasks = [
-            t for t in tasks
+            t
+            for t in tasks
             if project_map.get(t.project_id, "").lower().find(project_name_lower) != -1
         ]
 
@@ -258,6 +259,7 @@ def get_task_summary() -> dict:
 
     # Compute summary stats
     from datetime import date, datetime
+
     now = datetime.now()
 
     overdue = []
@@ -282,7 +284,7 @@ def get_task_summary() -> dict:
 
         due_val = task.due.date
         if isinstance(due_val, datetime):
-            due_date = due_val.date() if hasattr(due_val, 'date') else due_val
+            due_date = due_val.date() if hasattr(due_val, "date") else due_val
         elif isinstance(due_val, date):
             due_date = due_val
         else:
@@ -306,7 +308,7 @@ def get_task_summary() -> dict:
         "no_due_date_count": len(no_due_date),
         "by_project": by_project,
         "by_priority": {
-            "p1_urgent": by_priority[4],   # Todoist: 4 = highest
+            "p1_urgent": by_priority[4],  # Todoist: 4 = highest
             "p2_high": by_priority[3],
             "p3_medium": by_priority[2],
             "p4_normal": by_priority[1],
@@ -329,6 +331,73 @@ def get_config_info() -> dict:
 # --------------------------------------------------------------------------- #
 # Write Tools — GTD Inbox Processing
 # --------------------------------------------------------------------------- #
+
+
+@mcp.tool()
+def create_task(
+    content: str,
+    project_name: str | None = None,
+    section_name: str | None = None,
+    description: str | None = None,
+    priority: int | None = None,
+    due_string: str | None = None,
+    labels: list[str] | None = None,
+) -> dict:
+    """
+    Create a new task in Todoist. By default, the task is added to the Inbox.
+    Use project_name and section_name to place it in a specific project or
+    section.
+
+    Args:
+        content: The task title (required).
+        project_name: Project to add the task to (case-insensitive). If not
+                      provided, the task goes to the Inbox.
+        section_name: Section within the project (case-insensitive). If
+                      project_name is also given, the section is looked up
+                      within that project.
+        description: Optional description text for additional context.
+        priority: Priority level: 1=normal, 2=medium, 3=high, 4=urgent.
+        due_string: Due date in natural language. Examples: "today",
+                    "tomorrow", "next Monday", "Jan 15", "every Friday".
+        labels: List of label names to apply to the task.
+
+    Returns:
+        The created task dict with id, content, description, priority,
+        labels, due, project_name, url, etc.
+    """
+    api = _get_api()
+
+    kwargs: dict = {"content": content}
+
+    project_id = None
+    try:
+        if project_name:
+            project_id = _resolve_project_id(api, project_name)
+            kwargs["project_id"] = project_id
+        if section_name:
+            kwargs["section_id"] = _resolve_section_id(
+                api, section_name, project_id=project_id
+            )
+    except ValueError as e:
+        return {"error": str(e)}
+
+    if description is not None:
+        kwargs["description"] = description
+    if priority is not None:
+        kwargs["priority"] = priority
+    if due_string is not None:
+        kwargs["due_string"] = due_string
+    if labels is not None:
+        kwargs["labels"] = labels
+
+    try:
+        task = api.add_task(**kwargs)
+    except Exception as e:
+        return {"error": f"Failed to create task: {e}"}
+
+    projects = _get_projects_from_api(api=api)
+    project_map = {p.id: p.name for p in projects}
+    return _task_to_dict(task, project_map)
 
 
 @mcp.tool()
@@ -375,7 +444,9 @@ def update_task(
         kwargs["labels"] = labels
 
     if not kwargs:
-        return {"error": "No fields to update. Provide at least one of: content, description, priority, due_string, labels."}
+        return {
+            "error": "No fields to update. Provide at least one of: content, description, priority, due_string, labels."
+        }
 
     try:
         updated = api.update_task(task_id, **kwargs)
@@ -503,6 +574,49 @@ def complete_task(
         "id": task.id,
         "content": task.content,
     }
+
+
+# --------------------------------------------------------------------------- #
+# Write Tools — Project Management
+# --------------------------------------------------------------------------- #
+
+
+@mcp.tool()
+def create_project(
+    name: str,
+    color: str | None = None,
+    is_favorite: bool | None = None,
+) -> dict:
+    """
+    Create a new Todoist project.
+
+    Args:
+        name: The project name (required).
+        color: Project color. Todoist supports colors like "berry_red",
+               "red", "orange", "yellow", "olive_green", "lime_green",
+               "green", "mint_green", "teal", "sky_blue", "light_blue",
+               "blue", "grape", "violet", "lavender", "magenta",
+               "salmon", "charcoal", "grey", "taupe".
+        is_favorite: If True, the project is marked as a favorite.
+
+    Returns:
+        The created project dict with id, name, color, is_favorite, and
+        url fields.
+    """
+    api = _get_api()
+
+    kwargs: dict = {"name": name}
+    if color is not None:
+        kwargs["color"] = color
+    if is_favorite is not None:
+        kwargs["is_favorite"] = is_favorite
+
+    try:
+        project = api.add_project(**kwargs)
+    except Exception as e:
+        return {"error": f"Failed to create project: {e}"}
+
+    return _project_to_dict(project)
 
 
 # --------------------------------------------------------------------------- #
