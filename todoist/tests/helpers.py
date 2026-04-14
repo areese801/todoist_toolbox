@@ -21,6 +21,49 @@ def make_due(
     return due
 
 
+def make_label(
+    label_id="lab_1",
+    name="Work",
+    color="sky_blue",
+    is_favorite=False,
+):
+    """Create a mock Label object."""
+    label = MagicMock()
+    label.id = label_id
+    label.name = name
+    label.color = color
+    label.is_favorite = is_favorite
+    return label
+
+
+def make_section(
+    section_id="sec_1",
+    name="Next Actions",
+    project_id="proj_1",
+):
+    """Create a mock Section object."""
+    section = MagicMock()
+    section.id = section_id
+    section.name = name
+    section.project_id = project_id
+    return section
+
+
+def make_comment(
+    comment_id="com_1",
+    content="Note",
+    task_id="1001",
+    posted_at="2026-01-01T00:00:00Z",
+):
+    """Create a mock Comment object."""
+    comment = MagicMock()
+    comment.id = comment_id
+    comment.content = content
+    comment.task_id = task_id
+    comment.posted_at = posted_at
+    return comment
+
+
 def make_task(
     task_id="1001",
     content="Test task",
