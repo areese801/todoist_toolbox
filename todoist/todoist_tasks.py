@@ -347,6 +347,109 @@ def _probe_next_due_date_with_retry(
     return None
 
 
+def get_labels(api=None):
+    """
+    Fetch all labels from Todoist.
+
+    Args:
+        api: An optional TodoistAPI instance. If not provided, one will be created
+             using the token from the environment.
+    Returns: A list of Todoist Label objects.
+    """
+    if api is None:
+        api = TodoistAPI(_get_api_token())
+
+    try:
+        result = api.get_labels()
+        if isinstance(result, list):
+            return result
+        labels = []
+        for page in result:
+            labels.extend(page)
+        return labels
+    except Exception as ex:
+        print(
+            f"Got Exception while trying to collect labels from the Todoist API:\n{ex}.",
+            file=sys.stderr,
+        )
+        raise ex
+
+
+def get_sections(api=None, project_id=None):
+    """
+    Fetch sections from Todoist, optionally filtered by project_id.
+
+    Args:
+        api: An optional TodoistAPI instance. If not provided, one will be created
+             using the token from the environment.
+        project_id: If provided, only return sections for this project.
+    Returns: A list of Todoist Section objects.
+    """
+    if api is None:
+        api = TodoistAPI(_get_api_token())
+
+    try:
+        if project_id:
+            result = api.get_sections(project_id=project_id)
+        else:
+            result = api.get_sections()
+        if isinstance(result, list):
+            return result
+        sections = []
+        for page in result:
+            sections.extend(page)
+        return sections
+    except Exception as ex:
+        print(
+            f"Got Exception while trying to collect sections from the Todoist API:\n{ex}.",
+            file=sys.stderr,
+        )
+        raise ex
+
+
+def _resolve_project_id(api, project_name):
+    """
+    Resolve a project name to its ID via case-insensitive match.
+
+    Args:
+        api: A TodoistAPI instance.
+        project_name: The project name to search for (case-insensitive).
+    Returns: The project ID string.
+    Raises: ValueError if no matching project is found.
+    """
+    projects = get_projects(api=api)
+    name_lower = project_name.lower()
+    for p in projects:
+        if p.name.lower() == name_lower:
+            return p.id
+    available = [p.name for p in projects]
+    raise ValueError(
+        f"Project '{project_name}' not found. Available projects: {available}"
+    )
+
+
+def _resolve_section_id(api, section_name, project_id=None):
+    """
+    Resolve a section name to its ID via case-insensitive match.
+
+    Args:
+        api: A TodoistAPI instance.
+        section_name: The section name to search for (case-insensitive).
+        project_id: If provided, only search sections within this project.
+    Returns: The section ID string.
+    Raises: ValueError if no matching section is found.
+    """
+    sections = get_sections(api=api, project_id=project_id)
+    name_lower = section_name.lower()
+    for s in sections:
+        if s.name.lower() == name_lower:
+            return s.id
+    available = [s.name for s in sections]
+    raise ValueError(
+        f"Section '{section_name}' not found. Available sections: {available}"
+    )
+
+
 if __name__ == "__main__":
     overdue_tasks = get_overdue_recurring_tasks()
     if overdue_tasks:

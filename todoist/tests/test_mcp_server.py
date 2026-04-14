@@ -5,7 +5,7 @@ from datetime import date
 
 import pytest
 
-from todoist.tests.helpers import make_task, make_due
+from todoist.tests.helpers import make_task, make_due, make_label, make_section, make_comment
 
 
 def _make_project(project_id="proj_1", name="Work", color="sky_blue",
@@ -405,3 +405,400 @@ class TestGetConfigInfo:
             result = get_config_info()
 
         assert result == fake_config
+
+
+# --------------------------------------------------------------------------- #
+# update_task (MCP tool)
+# --------------------------------------------------------------------------- #
+
+class TestUpdateTask:
+    """Tests for the update_task MCP tool."""
+
+    def test_updates_content(self):
+        from todoist.mcp_server import update_task
+
+        proj = _make_project(project_id="p1", name="Inbox")
+        updated_task = make_task(
+            task_id="1001", content="Fixed typo", project_id="p1",
+            description="", priority=1, labels=[], is_completed=False,
+            created_at="2026-01-01", _no_due=True,
+        )
+
+        mock_api = MagicMock()
+        mock_api.update_task.return_value = updated_task
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._get_projects_from_api", return_value=[proj]),
+        ):
+            result = update_task(task_id="1001", content="Fixed typo")
+
+        mock_api.update_task.assert_called_once_with("1001", content="Fixed typo")
+        assert result["content"] == "Fixed typo"
+
+    def test_updates_multiple_fields(self):
+        from todoist.mcp_server import update_task
+
+        proj = _make_project(project_id="p1", name="Inbox")
+        due = make_due(due_date=date(2026, 4, 15), due_string="tomorrow", is_recurring=False)
+        updated_task = make_task(
+            task_id="1001", content="Task", project_id="p1",
+            description="Added context", priority=3, labels=["Work"],
+            is_completed=False, created_at="2026-01-01", due=due,
+        )
+
+        mock_api = MagicMock()
+        mock_api.update_task.return_value = updated_task
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._get_projects_from_api", return_value=[proj]),
+        ):
+            result = update_task(
+                task_id="1001",
+                description="Added context",
+                priority=3,
+                due_string="tomorrow",
+                labels=["Work"],
+            )
+
+        mock_api.update_task.assert_called_once_with(
+            "1001",
+            description="Added context",
+            priority=3,
+            due_string="tomorrow",
+            labels=["Work"],
+        )
+        assert result["description"] == "Added context"
+        assert result["due"]["string"] == "tomorrow"
+
+    def test_no_fields_returns_error(self):
+        from todoist.mcp_server import update_task
+
+        mock_api = MagicMock()
+
+        with patch("todoist.mcp_server._get_api", return_value=mock_api):
+            result = update_task(task_id="1001")
+
+        assert "error" in result
+        mock_api.update_task.assert_not_called()
+
+    def test_api_error_returns_error(self):
+        from todoist.mcp_server import update_task
+
+        mock_api = MagicMock()
+        mock_api.update_task.side_effect = Exception("not found")
+
+        with patch("todoist.mcp_server._get_api", return_value=mock_api):
+            result = update_task(task_id="9999", content="x")
+
+        assert "error" in result
+        assert "not found" in result["error"]
+
+
+# --------------------------------------------------------------------------- #
+# move_task (MCP tool)
+# --------------------------------------------------------------------------- #
+
+class TestMoveTask:
+    """Tests for the move_task MCP tool."""
+
+    def test_move_to_project(self):
+        from todoist.mcp_server import move_task
+
+        proj = _make_project(project_id="p2", name="Work")
+        moved_task = make_task(
+            task_id="1001", content="Task", project_id="p2",
+            description="", priority=1, labels=[], is_completed=False,
+            created_at="2026-01-01", _no_due=True,
+        )
+
+        mock_api = MagicMock()
+        mock_api.move_task.return_value = True
+        mock_api.get_task.return_value = moved_task
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._resolve_project_id", return_value="p2"),
+            patch("todoist.mcp_server._get_projects_from_api", return_value=[proj]),
+        ):
+            result = move_task(task_id="1001", project_name="Work")
+
+        mock_api.move_task.assert_called_once_with("1001", project_id="p2")
+        assert result["project_name"] == "Work"
+
+    def test_move_to_section(self):
+        from todoist.mcp_server import move_task
+
+        proj = _make_project(project_id="p1", name="Inbox")
+        moved_task = make_task(
+            task_id="1001", content="Task", project_id="p1",
+            description="", priority=1, labels=[], is_completed=False,
+            created_at="2026-01-01", _no_due=True,
+        )
+
+        mock_api = MagicMock()
+        mock_api.move_task.return_value = True
+        mock_api.get_task.return_value = moved_task
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._resolve_section_id", return_value="sec_1"),
+            patch("todoist.mcp_server._get_projects_from_api", return_value=[proj]),
+        ):
+            result = move_task(task_id="1001", section_name="Next Actions")
+
+        mock_api.move_task.assert_called_once_with("1001", section_id="sec_1")
+
+    def test_move_to_project_and_section(self):
+        from todoist.mcp_server import move_task
+
+        proj = _make_project(project_id="p2", name="Work")
+        moved_task = make_task(
+            task_id="1001", content="Task", project_id="p2",
+            description="", priority=1, labels=[], is_completed=False,
+            created_at="2026-01-01", _no_due=True,
+        )
+
+        mock_api = MagicMock()
+        mock_api.move_task.return_value = True
+        mock_api.get_task.return_value = moved_task
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._resolve_project_id", return_value="p2"),
+            patch("todoist.mcp_server._resolve_section_id", return_value="sec_1"),
+            patch("todoist.mcp_server._get_projects_from_api", return_value=[proj]),
+        ):
+            result = move_task(task_id="1001", project_name="Work", section_name="Next Actions")
+
+        mock_api.move_task.assert_called_once_with("1001", project_id="p2", section_id="sec_1")
+
+    def test_no_destination_returns_error(self):
+        from todoist.mcp_server import move_task
+
+        result = move_task(task_id="1001")
+
+        assert "error" in result
+
+    def test_invalid_project_returns_error(self):
+        from todoist.mcp_server import move_task
+
+        mock_api = MagicMock()
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._resolve_project_id",
+                  side_effect=ValueError("Project 'Nope' not found. Available projects: ['Work']")),
+        ):
+            result = move_task(task_id="1001", project_name="Nope")
+
+        assert "error" in result
+        assert "not found" in result["error"]
+
+    def test_api_error_returns_error(self):
+        from todoist.mcp_server import move_task
+
+        mock_api = MagicMock()
+        mock_api.move_task.side_effect = Exception("server error")
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._resolve_project_id", return_value="p2"),
+            patch("todoist.mcp_server._get_projects_from_api", return_value=[]),
+        ):
+            result = move_task(task_id="1001", project_name="Work")
+
+        assert "error" in result
+        assert "server error" in result["error"]
+
+
+# --------------------------------------------------------------------------- #
+# add_task_comment (MCP tool)
+# --------------------------------------------------------------------------- #
+
+class TestAddTaskComment:
+    """Tests for the add_task_comment MCP tool."""
+
+    def test_adds_comment(self):
+        from todoist.mcp_server import add_task_comment
+
+        comment = make_comment(
+            comment_id="com_1", content="Reference link",
+            task_id="1001", posted_at="2026-04-14T12:00:00Z",
+        )
+
+        mock_api = MagicMock()
+        mock_api.add_comment.return_value = comment
+
+        with patch("todoist.mcp_server._get_api", return_value=mock_api):
+            result = add_task_comment(task_id="1001", content="Reference link")
+
+        mock_api.add_comment.assert_called_once_with(task_id="1001", content="Reference link")
+        assert result["id"] == "com_1"
+        assert result["content"] == "Reference link"
+        assert result["posted_at"] == "2026-04-14T12:00:00Z"
+
+    def test_api_error_returns_error(self):
+        from todoist.mcp_server import add_task_comment
+
+        mock_api = MagicMock()
+        mock_api.add_comment.side_effect = Exception("task not found")
+
+        with patch("todoist.mcp_server._get_api", return_value=mock_api):
+            result = add_task_comment(task_id="9999", content="note")
+
+        assert "error" in result
+        assert "task not found" in result["error"]
+
+
+# --------------------------------------------------------------------------- #
+# complete_task (MCP tool)
+# --------------------------------------------------------------------------- #
+
+class TestCompleteTask:
+    """Tests for the complete_task MCP tool."""
+
+    def test_completes_task(self):
+        from todoist.mcp_server import complete_task
+
+        task = make_task(
+            task_id="1001", content="Done task",
+            description="", priority=1, labels=[], is_completed=False,
+            created_at="2026-01-01", _no_due=True,
+        )
+
+        mock_api = MagicMock()
+        mock_api.get_task.return_value = task
+        mock_api.complete_task.return_value = True
+
+        with patch("todoist.mcp_server._get_api", return_value=mock_api):
+            result = complete_task(task_id="1001")
+
+        mock_api.get_task.assert_called_once_with("1001")
+        mock_api.complete_task.assert_called_once_with("1001")
+        assert result["status"] == "completed"
+        assert result["id"] == "1001"
+        assert result["content"] == "Done task"
+
+    def test_task_not_found_returns_error(self):
+        from todoist.mcp_server import complete_task
+
+        mock_api = MagicMock()
+        mock_api.get_task.side_effect = Exception("not found")
+
+        with patch("todoist.mcp_server._get_api", return_value=mock_api):
+            result = complete_task(task_id="9999")
+
+        assert "error" in result
+        assert "not found" in result["error"]
+        mock_api.complete_task.assert_not_called()
+
+    def test_complete_api_error_returns_error(self):
+        from todoist.mcp_server import complete_task
+
+        task = make_task(task_id="1001", content="Task", _no_due=True)
+        mock_api = MagicMock()
+        mock_api.get_task.return_value = task
+        mock_api.complete_task.side_effect = Exception("server error")
+
+        with patch("todoist.mcp_server._get_api", return_value=mock_api):
+            result = complete_task(task_id="1001")
+
+        assert "error" in result
+        assert "server error" in result["error"]
+
+
+# --------------------------------------------------------------------------- #
+# get_labels (MCP tool)
+# --------------------------------------------------------------------------- #
+
+class TestGetLabels:
+    """Tests for the get_labels MCP tool."""
+
+    def test_returns_labels(self):
+        from todoist.mcp_server import get_labels
+
+        lab1 = make_label(label_id="l1", name="Work", color="sky_blue", is_favorite=True)
+        lab2 = make_label(label_id="l2", name="Errands", color="red", is_favorite=False)
+
+        mock_api = MagicMock()
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._get_labels_from_api", return_value=[lab1, lab2]),
+        ):
+            result = get_labels()
+
+        assert len(result) == 2
+        assert result[0] == {"id": "l1", "name": "Work", "color": "sky_blue", "is_favorite": True}
+        assert result[1] == {"id": "l2", "name": "Errands", "color": "red", "is_favorite": False}
+
+    def test_returns_empty_list(self):
+        from todoist.mcp_server import get_labels
+
+        mock_api = MagicMock()
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._get_labels_from_api", return_value=[]),
+        ):
+            result = get_labels()
+
+        assert result == []
+
+
+# --------------------------------------------------------------------------- #
+# get_sections (MCP tool)
+# --------------------------------------------------------------------------- #
+
+class TestGetSections:
+    """Tests for the get_sections MCP tool."""
+
+    def test_returns_all_sections(self):
+        from todoist.mcp_server import get_sections
+
+        sec1 = make_section(section_id="s1", name="Next Actions", project_id="p1")
+        sec2 = make_section(section_id="s2", name="Waiting For", project_id="p1")
+
+        mock_api = MagicMock()
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._get_sections_from_api", return_value=[sec1, sec2]),
+        ):
+            result = get_sections()
+
+        assert len(result) == 2
+        assert result[0] == {"id": "s1", "name": "Next Actions", "project_id": "p1"}
+
+    def test_filters_by_project_name(self):
+        from todoist.mcp_server import get_sections
+
+        sec = make_section(section_id="s1", name="Next Actions", project_id="p2")
+
+        mock_api = MagicMock()
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._resolve_project_id", return_value="p2"),
+            patch("todoist.mcp_server._get_sections_from_api", return_value=[sec]),
+        ):
+            result = get_sections(project_name="Work")
+
+        assert len(result) == 1
+
+    def test_invalid_project_returns_error(self):
+        from todoist.mcp_server import get_sections
+
+        mock_api = MagicMock()
+
+        with (
+            patch("todoist.mcp_server._get_api", return_value=mock_api),
+            patch("todoist.mcp_server._resolve_project_id",
+                  side_effect=ValueError("Project 'Nope' not found. Available projects: []")),
+        ):
+            result = get_sections(project_name="Nope")
+
+        assert len(result) == 1
+        assert "error" in result[0]
