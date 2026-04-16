@@ -9,6 +9,8 @@ Recipes:
     reschedule-overdue-nonrecurring    Reschedule overdue non-recurring tasks to today (dry-run by default)
     label-by-color                     Apply a label to all tasks under projects of a given color
     reschedule-work-to-monday          Reschedule overdue work tasks to next Monday (Friday evening)
+    unsnooze                           Restore snoozed tasks whose wake_time has passed
+    tui                                Launch the keyboard-driven TUI
 """
 
 import argparse
@@ -20,6 +22,7 @@ from todoist.recipes import complete_overdue_recurring
 from todoist.recipes import reschedule_overdue_nonrecurring
 from todoist.recipes import label_by_color
 from todoist.recipes import reschedule_work_to_monday
+from todoist.recipes import unsnooze
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -100,7 +103,39 @@ def build_parser() -> argparse.ArgumentParser:
     )
     rwm_parser.set_defaults(func=reschedule_work_to_monday.run)
 
+    # unsnooze
+    us_parser = subparsers.add_parser(
+        "unsnooze",
+        help="Restore snoozed tasks whose wake_time has passed.",
+    )
+    us_parser.add_argument(
+        "--execute",
+        action="store_true",
+        default=False,
+        help="Actually unsnooze tasks. Without this flag, only a dry-run is performed.",
+    )
+    us_parser.set_defaults(func=unsnooze.run)
+
+    # tui
+    tui_parser = subparsers.add_parser(
+        "tui",
+        help="Launch the keyboard-driven Todoist TUI.",
+    )
+    tui_parser.set_defaults(func=_run_tui)
+
     return parser
+
+
+def _run_tui(args, api=None):
+    """
+    Launch the TUI application.
+
+    Args:
+        args: Parsed argparse namespace (unused).
+        api: A TodoistAPI instance.
+    """
+    from todoist.tui.app import run_tui
+    run_tui(api=api)
 
 
 def main():

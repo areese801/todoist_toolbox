@@ -40,6 +40,9 @@ docs/
 # Skill artifacts (code review reports, etc.)
 .agent/
 
+# Superpowers brainstorm sessions
+.superpowers/
+
 
 # Ignore jupyter artifacts
 .ipynb
