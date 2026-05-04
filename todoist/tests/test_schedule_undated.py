@@ -233,8 +233,8 @@ class TestExecute:
             run(args, api=mock_api)
 
         assert mock_api.update_task.call_count == 2
-        mock_api.update_task.assert_any_call("1", due_date="2026-04-16")
-        mock_api.update_task.assert_any_call("2", due_date="2026-04-16")
+        mock_api.update_task.assert_any_call("1", due_date=date(2026, 4, 16))
+        mock_api.update_task.assert_any_call("2", due_date=date(2026, 4, 16))
 
         output = capsys.readouterr().out
         assert "Scheduled 2 of 2" in output
