@@ -1,8 +1,9 @@
 # Daily Todoist Recipes
 #
-# Runs two maintenance recipes each morning to clean up overdue tasks:
-#   1. complete-overdue-recurring    — closes overdue recurring tasks (interval <= 7 days)
+# Runs three maintenance recipes each morning to clean up overdue tasks:
+#   1. complete-overdue-recurring      — closes overdue recurring tasks (interval <= 7 days)
 #   2. reschedule-overdue-nonrecurring — bumps overdue one-off tasks to today
+#   3. schedule-undated                — assigns a default due date to undated tasks
 #
 # Schedule: 5:00 AM Mountain Time (11:00 UTC).
 #   During MDT (Mar–Nov) this fires at 4:00 AM local — close enough.
@@ -62,14 +63,23 @@ jobs:
           TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
         run: python -m todoist reschedule-overdue-nonrecurring --execute
 
+      # Recipe 3: Schedule a default due date on undated tasks.
+      - name: Schedule undated tasks
+        id: recipe_undated
+        continue-on-error: true
+        env:
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+        run: python -m todoist schedule-undated --execute
+
       # ----- Post-run -----
 
-      # Fail the workflow if either recipe failed.
+      # Fail the workflow if any recipe failed.
       # Without this, continue-on-error would silently swallow failures.
       - name: Check for recipe failures
-        if: steps.recipe_recurring.outcome == 'failure' || steps.recipe_nonrecurring.outcome == 'failure'
+        if: steps.recipe_recurring.outcome == 'failure' || steps.recipe_nonrecurring.outcome == 'failure' || steps.recipe_undated.outcome == 'failure'
         run: |
           echo "::error::One or more recipes failed."
-          echo "  complete-overdue-recurring:       ${{ steps.recipe_recurring.outcome }}"
+          echo "  complete-overdue-recurring:        ${{ steps.recipe_recurring.outcome }}"
           echo "  reschedule-overdue-nonrecurring:   ${{ steps.recipe_nonrecurring.outcome }}"
+          echo "  schedule-undated:                  ${{ steps.recipe_undated.outcome }}"
           exit 1
