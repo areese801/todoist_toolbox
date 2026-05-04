@@ -14,6 +14,7 @@ _REQUIRED_KEYS = [
     "work_label",
     "project_color",
     "no_robots_label",
+    "no_due_date_label",
     "timezone",
     "friday_cutoff_hour",
 ]

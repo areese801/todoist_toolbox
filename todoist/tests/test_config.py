@@ -19,6 +19,7 @@ class TestGetConfig:
             "work_label": "TestLabel",
             "project_color": "red",
             "no_robots_label": "_skip",
+            "no_due_date_label": "_NoDueDate",
             "timezone": "UTC",
             "friday_cutoff_hour": 17,
         }))
@@ -29,6 +30,7 @@ class TestGetConfig:
         assert cfg["work_label"] == "TestLabel"
         assert cfg["project_color"] == "red"
         assert cfg["no_robots_label"] == "_skip"
+        assert cfg["no_due_date_label"] == "_NoDueDate"
         assert cfg["timezone"] == "UTC"
         assert cfg["friday_cutoff_hour"] == 17
 
