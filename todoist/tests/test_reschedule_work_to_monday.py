@@ -246,7 +246,7 @@ class TestRescheduleWorkToMonday:
             args = argparse.Namespace(execute=True, force=False)
             run(args, api=mock_api)
 
-        mock_api.update_task.assert_called_once_with("1", due_date="2026-04-13")
+        mock_api.update_task.assert_called_once_with("1", due_date=date(2026, 4, 13))
         output = capsys.readouterr().out
         assert "Rescheduled 1 of 1" in output
 

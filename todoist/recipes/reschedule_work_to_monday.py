@@ -102,7 +102,7 @@ def run(args, api=None):
         return
 
     if args.execute:
-        _execute(api, eligible, target_str)
+        _execute(api, eligible, target_monday)
     else:
         _dry_run(eligible, target_str)
 
@@ -117,20 +117,24 @@ def _dry_run(tasks, target_date: str):
     print(f"\nTo execute, re-run with --execute")
 
 
-def _execute(api, tasks, target_date: str):
+def _execute(api, tasks, target_date: date):
     """
     Reschedule qualifying tasks to the target Monday.
+
+    The Todoist API client expects `due_date` as a `date` object (it calls
+    `.isoformat()` internally); passing a string raises AttributeError.
     """
+    target_str = target_date.isoformat()
     rescheduled = 0
     failed = 0
     for task in tasks:
         try:
             api.update_task(task.id, due_date=target_date)
-            print(f"  Rescheduled to {target_date}: {_task_link(task)}")
+            print(f"  Rescheduled to {target_str}: {_task_link(task)}")
             rescheduled += 1
         except Exception as ex:
             print(f"  FAILED: {_task_link(task)} -- {ex}")
             failed += 1
 
     total = len(tasks)
-    print(f"\nRescheduled {rescheduled} of {total} task(s) to {target_date}. {failed} failure(s).")
+    print(f"\nRescheduled {rescheduled} of {total} task(s) to {target_str}. {failed} failure(s).")
