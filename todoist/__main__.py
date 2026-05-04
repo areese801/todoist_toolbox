@@ -9,6 +9,7 @@ Recipes:
     reschedule-overdue-nonrecurring    Reschedule overdue non-recurring tasks to today (dry-run by default)
     label-by-color                     Apply a label to all tasks under projects of a given color
     reschedule-work-to-monday          Reschedule overdue work tasks to next Monday (Friday evening)
+    schedule-undated                   Apply a due date to undated tasks (dry-run by default)
 """
 
 import argparse
@@ -20,6 +21,7 @@ from todoist.recipes import complete_overdue_recurring
 from todoist.recipes import reschedule_overdue_nonrecurring
 from todoist.recipes import label_by_color
 from todoist.recipes import reschedule_work_to_monday
+from todoist.recipes import schedule_undated
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -99,6 +101,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Bypass the day/time check (normally only runs Friday evening or weekends).",
     )
     rwm_parser.set_defaults(func=reschedule_work_to_monday.run)
+
+    # schedule-undated
+    su_parser = subparsers.add_parser(
+        "schedule-undated",
+        help="Apply a due date to undated tasks (tomorrow, or next Monday if tomorrow is a weekend).",
+    )
+    su_parser.add_argument(
+        "--execute",
+        action="store_true",
+        default=False,
+        help="Actually apply due dates. Without this flag, only a dry-run is performed.",
+    )
+    su_parser.set_defaults(func=schedule_undated.run)
 
     return parser
 
